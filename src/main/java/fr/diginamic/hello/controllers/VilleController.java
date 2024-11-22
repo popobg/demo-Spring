@@ -15,6 +15,10 @@ import java.util.List;
 @RequestMapping("/villes")
 public class VilleController {
 
+    /**
+     * Méthode permettant de récupérer une liste d'objets Ville
+     * @return liste de ville
+     */
     @GetMapping
     public List<Ville> getVilles() {
         return List.of(new Ville(343000, "Nice"),
