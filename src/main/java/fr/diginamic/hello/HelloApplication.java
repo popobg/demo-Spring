@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class HelloApplication {
 
+    // Lance le serveur web intégré à Spring Web
     public static void main(String[] args) {
         SpringApplication.run(HelloApplication.class, args);
     }
-
 }
