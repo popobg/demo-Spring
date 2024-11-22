@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/hello")
 public class HelloController {
 
-    /** Instance de helloService */
+    /** Service de gestion des salutations */
     // injection de dépendances : bean Spring du service créé
     // et géré dans le conteneur IoC Spring
     // ==> pas besoin d'initialiser nous-mêmes le service
