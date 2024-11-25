@@ -44,12 +44,12 @@ public class VilleRepository {
      * Méthode permettant de récupérer une ville à partir de son nom.
      * @return ville
      */
-    public Ville getVille(String nomVille) {
-        return villes.stream().filter(v -> v.getNom().equalsIgnoreCase(nomVille)).findFirst().orElse(null);
+    public Ville getVille(String id) {
+        return villes.stream().filter(v -> v.getId().equals(id)).findFirst().orElse(null);
     }
 
     /**
-     * Méthode permettant d'ajouter une ville à la liste de villes
+     * Méthode permettant d'ajouter une ville à la liste de villes.
      * @param ville ville
      */
     public boolean addVille(Ville ville) {
@@ -58,5 +58,23 @@ public class VilleRepository {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Méthode permettant de mettre à jour les données d'une ville existante.
+     * @param villeExistante ville à modifier
+     * @param ville objet ville contenant les nouvelles données
+     */
+    public void updateVille(Ville villeExistante, Ville ville) {
+        villeExistante.setNom(ville.getNom());
+        villeExistante.setNbHabitants(ville.getNbHabitants());
+    }
+
+    /**
+     * Méthode permettant de supprimer une ville de la liste des villes.
+     * @param ville ville à supprimer
+     */
+    public void deleteVille(Ville ville) {
+        villes.remove(ville);
     }
 }

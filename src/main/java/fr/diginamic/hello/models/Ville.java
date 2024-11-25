@@ -1,15 +1,29 @@
 package fr.diginamic.hello.models;
 
+import jakarta.validation.constraints.*;
+
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Classe entité décrivant une ville (nom et nombre d'habitants)
  */
 public class Ville implements Serializable {
+    /** identifiant unique et non modifiable de la ville */
+    @NotNull @NotEmpty @NotBlank
+    private final String id;
+
     /** Nom de la ville */
+    @NotNull(message = "Le nom est obligatoire.")
+    @NotEmpty(message = "Le nom est obligatoire.")
+    @NotBlank(message = "Le nom est obligatoire.")
+    @Size(min = 2, message = "Le nom doit comporter au moins deux caractères.")
     private String nom;
+
     /** Nombre d'habitants dans la ville */
+    @NotNull
+    @Min(value = 1)
     private int nbHabitants;
 
     /**
@@ -18,6 +32,8 @@ public class Ville implements Serializable {
      * @param nom nom de la ville
      */
     public Ville(int nbHabitants, String nom) {
+        // génération aléatoire de l'ID à la création de l'instance de ville
+        this.id = UUID.randomUUID().toString();
         this.nom = nom;
         this.nbHabitants = nbHabitants;
     }
@@ -54,6 +70,14 @@ public class Ville implements Serializable {
         sb.append(", nbHabitants=").append(nbHabitants);
         sb.append('}');
         return sb.toString();
+    }
+
+    /**
+     * Getter
+     * @return id
+     */
+    public String getId() {
+        return id;
     }
 
     /**
