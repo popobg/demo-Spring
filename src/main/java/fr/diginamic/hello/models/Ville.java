@@ -22,7 +22,7 @@ public class Ville implements Serializable {
     private String nom;
 
     /** Nombre d'habitants dans la ville */
-    @NotNull
+    @NotNull(message = "Le nombre d'habitants est obligatoire.")
     @Min(value = 1)
     private int nbHabitants;
 
@@ -47,7 +47,7 @@ public class Ville implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Ville ville)) return false;
-        return nbHabitants == ville.nbHabitants && nom.equalsIgnoreCase(ville.nom);
+        return nbHabitants == ville.nbHabitants && Objects.equals(id, ville.id) && Objects.equals(nom, ville.nom);
     }
 
     /**
@@ -56,7 +56,7 @@ public class Ville implements Serializable {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(nom, nbHabitants);
+        return Objects.hash(id, nom, nbHabitants);
     }
 
     /**

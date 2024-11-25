@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -45,7 +46,7 @@ public class VilleRepository {
      * @return ville
      */
     public Ville getVille(String id) {
-        return villes.stream().filter(v -> v.getId().equals(id)).findFirst().orElse(null);
+        return villes.stream().filter(v -> v.getId().equals(id)).findAny().orElse(null);
     }
 
     /**
@@ -75,6 +76,6 @@ public class VilleRepository {
      * @param ville ville à supprimer
      */
     public void deleteVille(Ville ville) {
-        villes.remove(ville);
+        villes.removeIf(ville1 -> ville1.equals(ville));
     }
 }
