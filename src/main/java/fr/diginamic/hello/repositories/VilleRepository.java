@@ -53,7 +53,7 @@ public class VilleRepository {
      * @param ville ville
      */
     public boolean addVille(Ville ville) {
-        if (villes.stream().noneMatch(v -> v.getNom().equalsIgnoreCase(ville.getNom()))) {
+        if (villes.stream().noneMatch(v -> v.equals(ville))) {
             villes.add(ville);
             return true;
         }
