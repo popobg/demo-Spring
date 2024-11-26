@@ -1,5 +1,6 @@
 package fr.diginamic.hello.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -28,8 +30,10 @@ public class Departement {
     @Column(name="CODE")
     private String code;
 
+    // évite la boucle infinie à la création des objets
+    @JsonIgnore
     @OneToMany(mappedBy="departement")
-    private ArrayList<Ville> villes;
+    private List<Ville> villes;
 
     {
         villes = new ArrayList<>();
@@ -113,7 +117,7 @@ public class Departement {
      * Getter
      * @return villes
      */
-    public ArrayList<Ville> getVilles() {
+    public List<Ville> getVilles() {
         return villes;
     }
 
@@ -121,7 +125,7 @@ public class Departement {
      * Setter
      * @param villes villes
      */
-    public void setVilles(ArrayList<Ville> villes) {
+    public void setVilles(List<Ville> villes) {
         this.villes = villes;
     }
 }
