@@ -41,7 +41,11 @@ public class DepartementController {
      */
     // URL paramétrée
     @GetMapping("/{id}")
-    public ResponseEntity<Departement> getDepartementById(@PathVariable int id) {
+    public ResponseEntity<Departement> getDepartementById(@PathVariable Long id) {
+        if (id == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+
         Departement dept = deptService.getDepartementById(id);
 
         if (dept == null) {
@@ -56,18 +60,18 @@ public class DepartementController {
 
     /**
      * Méthode permettant de récupérer un département à partir de son nom.
-     * @param nom nom du département
+     * @param code code du département
      * @return un département et le statut HTTP de la requête
      */
     // requête paramétrée
-    @GetMapping("/nom")
-    public ResponseEntity<Departement> getDepartementByName(@RequestParam String nom) {
+    @GetMapping("/code")
+    public ResponseEntity<Departement> getDepartementByCode(@RequestParam String code) {
         // Si la requête n'est pas correcte : erreur 400
-        if (nom == null || nom.isEmpty()) {
+        if (code == null || code.isEmpty()) {
             return ResponseEntity.badRequest().body(null);
         }
 
-        Departement dept = deptService.getDepartementByName(nom);
+        Departement dept = deptService.getDepartementByCode(code);
 
         if (dept == null) {
             // ressource non trouvée : erreur 404
@@ -102,9 +106,14 @@ public class DepartementController {
      * @return le statut HTTP de la requête accompagné d'un message
      */
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateVille(@PathVariable int id, @Valid @RequestBody Departement dept, BindingResult result) {
+    public ResponseEntity<String> updateVille(@PathVariable Long id, @Valid @RequestBody Departement dept, BindingResult result) {
+        // Permet d'avoir l'ensemble des erreurs
         if (result.hasErrors()) {
             return ResponseEntity.badRequest().body(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
+        }
+
+        if (id == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
         if (deptService.updateDepartement(id, dept) == EnumHttpStatus.OK) {
@@ -122,7 +131,11 @@ public class DepartementController {
      * @return le statut HTTP de la requête accompagné d'un message
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteVille(@PathVariable int id) {
+    public ResponseEntity<String> deleteVille(@PathVariable Long id) {
+        if (id == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+
         if (deptService.deleteDepartement(id) == EnumHttpStatus.OK) {
             return ResponseEntity.ok(String.format("Le département d'id %s a été supprimé avec succès.", id));
         }

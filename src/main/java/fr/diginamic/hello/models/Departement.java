@@ -6,8 +6,8 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Objects;
 
 @Entity
 @Table(name="departement")
@@ -15,7 +15,7 @@ public class Departement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
-    private int id;
+    private long id;
 
     /** Nom de la ville */
     @NotNull(message = "Le nom est obligatoire.")
@@ -29,10 +29,10 @@ public class Departement {
     private String code;
 
     @OneToMany(mappedBy="departement")
-    private Set<Ville> villes;
+    private ArrayList<Ville> villes;
 
     {
-        villes = new HashSet<Ville>();
+        villes = new ArrayList<>();
     }
 
     /**
@@ -46,11 +46,34 @@ public class Departement {
         this.code = code;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Departement that)) return false;
+        return id == that.id && Objects.equals(nom, that.nom) && Objects.equals(code, that.code) && Objects.equals(villes, that.villes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, nom, code, villes);
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Departement{");
+        sb.append("id=").append(id);
+        sb.append(", nom='").append(nom).append('\'');
+        sb.append(", code='").append(code).append('\'');
+        sb.append(", villes=").append(villes);
+        sb.append('}');
+        return sb.toString();
+    }
+
     /**
      * Getter
      * @return id
      */
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -90,7 +113,7 @@ public class Departement {
      * Getter
      * @return villes
      */
-    public Set<Ville> getVilles() {
+    public ArrayList<Ville> getVilles() {
         return villes;
     }
 
@@ -98,7 +121,7 @@ public class Departement {
      * Setter
      * @param villes villes
      */
-    public void setVilles(Set<Ville> villes) {
+    public void setVilles(ArrayList<Ville> villes) {
         this.villes = villes;
     }
 }

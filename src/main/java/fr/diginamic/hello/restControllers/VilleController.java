@@ -41,7 +41,7 @@ public class VilleController {
      */
     // URL paramétrée
     @GetMapping("/{id}")
-    public ResponseEntity<Ville> getVilleById(@PathVariable int id) {
+    public ResponseEntity<Ville> getVilleById(@PathVariable long id) {
         Ville ville = villeService.getVilleById(id);
 
         if (ville == null) {
@@ -102,7 +102,7 @@ public class VilleController {
      * @return le statut HTTP de la requête accompagné d'un message
      */
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateVille(@PathVariable int id, @Valid @RequestBody Ville ville, BindingResult result) {
+    public ResponseEntity<String> updateVille(@PathVariable long id, @Valid @RequestBody Ville ville, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.badRequest().body(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
         }
@@ -122,7 +122,7 @@ public class VilleController {
      * @return le statut HTTP de la requête accompagné d'un message
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteVille(@PathVariable int id) {
+    public ResponseEntity<String> deleteVille(@PathVariable long id) {
         if (villeService.deleteVille(id) == EnumHttpStatus.OK) {
             return ResponseEntity.ok(String.format("La ville d'id %s a été supprimée avec succès.", id));
         }
@@ -130,5 +130,29 @@ public class VilleController {
             // Erreur 404 not found
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("La ville d'id %s n'existe pas.", id));
         }
+    }
+
+    /**
+     * Retourne les N plus grandes villes d'un département.
+     * @param codeDep code département
+     * @param n nombre de villes souhaité
+     * @return liste de villes
+     */
+    @GetMapping("/findByDepartmentCodeOrderByNbInhabitantsDesc/{codeDep}/{n}")
+    public List<Ville> findByDepartmentCodeOrderByNbInhabitantsDesc(@PathVariable("codeDep")String codeDep, @PathVariable("n") Integer n) {
+        return villeService.findByDepartementCodeOrderByNbHabDesc(codeDep,n);
+    }
+
+    /**
+     * Retourne les villes d'un département dont le nombre d'habitants
+     * est compris dans un intervalle.
+     * @param codeDep code du département
+     * @param min nombre minimum d'habitants
+     * @param max nombre maximum d'habitants
+     * @return liste de villes
+     */
+    @GetMapping("/findByDepartmentCodeAndNbInhabitantsBetween/{codeDep}/{min}/{max}")
+    public List<Ville> findByDepartmentCodeAndNbInhabitantsBetween(@PathVariable("codeDep")String codeDep, @PathVariable("min") Integer min,@PathVariable("max") Integer max) {
+        return villeService.findByDepartementCodeAndNbHabBetween(codeDep, min,max);
     }
 }

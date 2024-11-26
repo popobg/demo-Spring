@@ -1,7 +1,6 @@
 package fr.diginamic.hello.dao;
 
 import fr.diginamic.hello.models.Departement;
-import fr.diginamic.hello.models.Ville;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
@@ -36,7 +35,7 @@ public class DepartementDao {
      * Méthode permettant de récupérer un département à partir de son id.
      * @return département
      */
-    public Departement extractDepartementById(int id) {
+    public Departement extractDepartementById(long id) {
         try {
             return em.find(Departement.class, id);
         }
@@ -49,9 +48,9 @@ public class DepartementDao {
      * Méthode permettant de récupérer un département à partir de son nom.
      * @return département
      */
-    public Departement extractDepartementByName(String nom) {
+    public Departement extractDepartementByCode(String code) {
         try {
-            return (Departement) em.createQuery("select d from Departement d where d.nom = :nom").setParameter("nom", nom).getSingleResult();
+            return em.createQuery("select d from Departement d where d.code = :code", Departement.class).setParameter("code", code).getSingleResult();
         }
         catch (NoResultException e) {
             return null;

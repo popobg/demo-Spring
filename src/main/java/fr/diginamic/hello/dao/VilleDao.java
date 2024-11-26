@@ -33,7 +33,7 @@ public class VilleDao {
      * Méthode permettant de récupérer une ville à partir de son id.
      * @return ville
      */
-    public Ville extractVilleById(int id) {
+    public Ville extractVilleById(long id) {
         try {
             return em.find(Ville.class, id);
         }
@@ -80,5 +80,27 @@ public class VilleDao {
     @Transactional
     public void deleteVille(Ville ville) {
         em.remove(ville);
+    }
+
+    /**
+     * Retourne la liste des N plus grandes villes d'un département.
+     * @param codeDep code du département
+     * @param n nombre de villes à retourner
+     * @return liste des villes
+     */
+    public List<Ville> findByDepartementCodeOrderByNbHabDesc(String codeDep, int n) {
+        return em.createQuery("select v from Ville v where v.departement.code=:codeDept order by nbHabitants desc limit :n", Ville.class).setParameter("codeDept", codeDep).setParameter("n", n).getResultList();
+    }
+
+    /**
+     * Retourne la liste des villes d'un département, dont le nombre d'habitants
+     * est compris dans un intervalle donné.
+     * @param codeDep code du département
+     * @param min nombre minimum d'habitants
+     * @param max nombre maximum d'habitants
+     * @return liste des villes
+     */
+    public List<Ville> findByDepartementCodeAndNbHabBetween(String codeDep, int min, int max) {
+        return em.createQuery("select v from Ville v where v.departement.code=:codeDept and v.nbHabitants > :min and nbHabitants < :max", Ville.class).setParameter("codeDept", codeDep).setParameter("min", min).setParameter("max", max).getResultList();
     }
 }

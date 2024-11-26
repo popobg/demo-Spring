@@ -27,6 +27,13 @@ public class DepartementService {
         departementDao.insertDepartement(new Departement("Paris", "75"));
         departementDao.insertDepartement(new Departement("Toulouse", "31"));
         departementDao.insertDepartement(new Departement("Yvelines", "78"));
+        departementDao.insertDepartement(new Departement("Alpes-Maritime", "06"));
+        departementDao.insertDepartement(new Departement("Aude", "11"));
+        departementDao.insertDepartement(new Departement("Rhône", "69D"));
+        departementDao.insertDepartement(new Departement("Ariège", "09"));
+        departementDao.insertDepartement(new Departement("Pyrénées-Atlantique", "64"));
+        departementDao.insertDepartement(new Departement("Bouches-du-Rhône", "13"));
+        departementDao.insertDepartement(new Departement("Hautes-Pyrénées", "65"));
     }
 
     /**
@@ -41,7 +48,7 @@ public class DepartementService {
      * Méthode permettant de demander un département au repository à partir de son id.
      * @return département
      */
-    public Departement getDepartementById(int id) {
+    public Departement getDepartementById(long id) {
         return departementDao.extractDepartementById(id);
     }
 
@@ -49,8 +56,8 @@ public class DepartementService {
      * Méthode permettant de demander un département au repository à partir de son nom.
      * @return département
      */
-    public Departement getDepartementByName(String nom) {
-        return departementDao.extractDepartementByName(nom);
+    public Departement getDepartementByCode(String code) {
+        return departementDao.extractDepartementByCode(code);
     }
 
     /**
@@ -69,7 +76,7 @@ public class DepartementService {
      * @param dept objet département contenant les nouvelles informations
      * @return un enum reflétant le statut de la requête
      */
-    public EnumHttpStatus updateDepartement(int id, Departement dept) {
+    public EnumHttpStatus updateDepartement(long id, Departement dept) {
         Departement deptExistant = departementDao.extractDepartementById(id);
 
         if (deptExistant == null) {
@@ -89,7 +96,7 @@ public class DepartementService {
      * @param id identifiant du département à supprimer
      * @return un enum reflétant le statut de la requête
      */
-    public EnumHttpStatus deleteDepartement(int id) {
+    public EnumHttpStatus deleteDepartement(long id) {
         Departement dept = departementDao.extractDepartementById(id);
 
         if (dept == null) {

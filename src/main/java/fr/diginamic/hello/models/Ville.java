@@ -16,7 +16,7 @@ public class Ville implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
-    private int id;
+    private long id;
 
     /** Nom de la ville */
     @NotNull(message = "Le nom est obligatoire.")
@@ -50,6 +50,18 @@ public class Ville implements Serializable {
     public Ville(String nom, int nbHabitants) {
         this.nom = nom;
         this.nbHabitants = nbHabitants;
+    }
+
+    /**
+     * Constructeur
+     * @param nom nom de la ville
+     * @param nbHabitants nombre d'habitants
+     * @param departement département de la ville
+     */
+    public Ville(String nom, int nbHabitants, Departement departement) {
+        this.nom = nom;
+        this.nbHabitants = nbHabitants;
+        this.departement = departement;
     }
 
     /**
@@ -90,7 +102,7 @@ public class Ville implements Serializable {
      * Getter
      * @return id
      */
-    public int getId() {
+    public long getId() {
         return id;
     }
 
