@@ -1,39 +1,53 @@
 package fr.diginamic.hello.models;
 
+import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * Classe entité décrivant une ville (nom et nombre d'habitants)
  */
+@Entity
+@Table(name="ville")
 public class Ville implements Serializable {
     /** identifiant unique et non modifiable de la ville */
-    @NotNull @NotEmpty @NotBlank
-    private final String id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
+    private int id;
 
     /** Nom de la ville */
     @NotNull(message = "Le nom est obligatoire.")
     @NotEmpty(message = "Le nom est obligatoire.")
     @NotBlank(message = "Le nom est obligatoire.")
     @Size(min = 2, message = "Le nom doit comporter au moins deux caractères.")
+    @Column(name="NOM")
     private String nom;
 
     /** Nombre d'habitants dans la ville */
     @NotNull(message = "Le nombre d'habitants est obligatoire.")
     @Min(value = 1)
+    @Column(name="NB_HABITANTS")
     private int nbHabitants;
+
+    @ManyToOne
+    @JoinColumn(name="CODE_DEPT")
+    private Departement departement;
+
+    /**
+     * Constructeur vide
+     */
+    public Ville() {
+    }
 
     /**
      * Constructeur
-     * @param nbHabitants nombre d'habitants
      * @param nom nom de la ville
+     * @param nbHabitants nombre d'habitants
      */
-    public Ville(int nbHabitants, String nom) {
-        // génération aléatoire de l'ID à la création de l'instance de ville
-        this.id = UUID.randomUUID().toString();
+    public Ville(String nom, int nbHabitants) {
         this.nom = nom;
         this.nbHabitants = nbHabitants;
     }
@@ -76,7 +90,7 @@ public class Ville implements Serializable {
      * Getter
      * @return id
      */
-    public String getId() {
+    public int getId() {
         return id;
     }
 
@@ -110,5 +124,21 @@ public class Ville implements Serializable {
      */
     public void setNbHabitants(int nbHabitants) {
         this.nbHabitants = nbHabitants;
+    }
+
+    /**
+     * Getter
+     * @return departement
+     */
+    public Departement getDepartement() {
+        return departement;
+    }
+
+    /**
+     * Setter
+     * @param departement departement
+     */
+    public void setDepartement(Departement departement) {
+        this.departement = departement;
     }
 }

@@ -1,4 +1,4 @@
-package fr.diginamic.hello.controllers;
+package fr.diginamic.hello.restControllers;
 
 import fr.diginamic.hello.httpStatusCode.EnumHttpStatus;
 import fr.diginamic.hello.models.Ville;
@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Classe Controller gérant les requêtes liées aux villes
@@ -25,7 +27,7 @@ public class VilleController {
 
     /**
      * Méthode permettant de récupérer un ensemble d'objets Ville.
-     * @return set de villes
+     * @return liste de villes
      */
     @GetMapping("/liste")
     public List<Ville> getVilles() {
@@ -34,17 +36,38 @@ public class VilleController {
 
     /**
      * Méthode permettant de récupérer une ville à partir de son id.
+     * @param id identifiant de la ville
      * @return une ville et le statut HTTP de la requête
      */
     // URL paramétrée
     @GetMapping("/{id}")
-    public ResponseEntity<Ville> getVille(@PathVariable String id) {
+    public ResponseEntity<Ville> getVilleById(@PathVariable int id) {
+        Ville ville = villeService.getVilleById(id);
+
+        if (ville == null) {
+            // ressource non trouvée : erreur 404
+            return ResponseEntity.notFound().build();
+        }
+        else {
+            // statut http ok + ville trouvée
+            return ResponseEntity.ok(ville);
+        }
+    }
+
+    /**
+     * Méthode permettant de récupérer une ville à partir de son nom.
+     * @param nom nom de la ville
+     * @return une ville et le statut HTTP de la requête
+     */
+    // requête paramétrée
+    @GetMapping("/nom")
+    public ResponseEntity<Ville> getVilleByName(@RequestParam String nom) {
         // Si la requête n'est pas correcte : erreur 400
-        if (id == null || id.isEmpty()) {
+        if (nom == null || nom.isEmpty()) {
             return ResponseEntity.badRequest().body(null);
         }
 
-        Ville ville = villeService.getVille(id);
+        Ville ville = villeService.getVilleByName(nom);
 
         if (ville == null) {
             // ressource non trouvée : erreur 404
@@ -59,21 +82,17 @@ public class VilleController {
     /**
      * Méthode permettant d'ajouter un objet Ville aux villes enregistrées.
      * @param ville ville
-     * @return le statut HTTP de la requête accompagné d'un message
+     * @param result objet injecté par Spring Validation pour vérifier la validité des champs de ville
+     * @return une liste de villes et le statut HTTP de la requête accompagné d'un message
      */
     @PostMapping
-    public ResponseEntity<String> addVille(@Valid @RequestBody Ville ville, BindingResult result) {
+    public ResponseEntity<List<Ville>> addVille(@Valid @RequestBody Ville ville, BindingResult result) {
         if (result.hasErrors()) {
-            return ResponseEntity.badRequest().body(result.getAllErrors().getFirst().getDefaultMessage());
+            return ResponseEntity.badRequest().body(null);
         }
 
-        if (villeService.addVille(ville) == EnumHttpStatus.OK) {
-            return ResponseEntity.ok(String.format("La ville %s a été insérée avec succès.", ville.getNom()));
-        }
-        else {
-            // Si la ressource existe déjà : erreur 409
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(String.format("La ville %s existe déjà.", ville.getNom()));
-        }
+        villeService.insertVille(ville);
+        return ResponseEntity.ok(villeService.getVilles());
     }
 
     /**
@@ -82,12 +101,10 @@ public class VilleController {
      * @param ville ville contenant les nouvelles informations
      * @return le statut HTTP de la requête accompagné d'un message
      */
-    // Inconvénient avec la méthode de génération de l'ID à la construction utilisée :
-    // un nouvel id est créé pour l'objet contenant les modification à apporter à la ville
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateVille(@PathVariable String id, @Valid @RequestBody Ville ville, BindingResult result) {
+    public ResponseEntity<String> updateVille(@PathVariable int id, @Valid @RequestBody Ville ville, BindingResult result) {
         if (result.hasErrors()) {
-            return ResponseEntity.badRequest().body(result.getAllErrors().getFirst().getDefaultMessage());
+            return ResponseEntity.badRequest().body(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
         }
 
         if (villeService.updateVille(id, ville) == EnumHttpStatus.OK) {
@@ -105,11 +122,7 @@ public class VilleController {
      * @return le statut HTTP de la requête accompagné d'un message
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteVille(@PathVariable String id) {
-        if (id == null || id.isEmpty()) {
-            return ResponseEntity.badRequest().body("Les données de modification sont incorrectes.");
-        }
-
+    public ResponseEntity<String> deleteVille(@PathVariable int id) {
         if (villeService.deleteVille(id) == EnumHttpStatus.OK) {
             return ResponseEntity.ok(String.format("La ville d'id %s a été supprimée avec succès.", id));
         }
