@@ -5,6 +5,8 @@ import fr.diginamic.hello.models.Departement;
 import fr.diginamic.hello.services.DepartementService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -32,6 +34,18 @@ public class DepartementController {
     @GetMapping("/liste")
     public List<Departement> getDepartements() {
         return deptService.getDepartements();
+    }
+
+    /**
+     * Méthode permettant de récupérer un ensemble d'objets Departement
+     * triés par nom avec une pagination.
+     * @param n nombre d'éléments à afficher
+     * @return liste de départements
+     */
+    @GetMapping("/liste/pagination")
+    public List<Departement> getDepartementsPagination(@RequestParam int n) {
+        Pageable pagination = PageRequest.of(0, n);
+        return deptService.getDepartementsPagination(pagination);
     }
 
     /**
@@ -95,8 +109,13 @@ public class DepartementController {
             return ResponseEntity.badRequest().body(null);
         }
 
-        deptService.insertDepartement(dept);
-        return ResponseEntity.ok(deptService.getDepartements());
+        if (deptService.insertDepartement(dept) == EnumHttpStatus.OK) {
+            return ResponseEntity.ok(deptService.getDepartements());
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+
+        }
     }
 
     /**

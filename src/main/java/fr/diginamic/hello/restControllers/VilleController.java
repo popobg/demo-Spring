@@ -38,12 +38,13 @@ public class VilleController {
 
     /**
      * Méthode permettant de récupérer un ensemble d'objets Ville
-     * avec une pagination.
+     * triés par nom avec une pagination.
+     * @param n nombre d'éléments à afficher
      * @return liste de villes
      */
     @GetMapping("/liste/pagination")
-    public List<Ville> getVilles(@RequestParam int page, @RequestParam int size) {
-        Pageable pagination = PageRequest.of(page, size);
+    public List<Ville> getVilles(@RequestParam int n) {
+        Pageable pagination = PageRequest.of(0, n);
         return villeService.getVillesPagination(pagination);
     }
 
@@ -198,13 +199,12 @@ public class VilleController {
     /**
      * Retourne les N plus grandes villes d'un département.
      * @param codeDep code département
-     * @param page numéro de la page à afficher
-     * @param size nombre d'éléments à afficher
+     * @param n nombre d'éléments à afficher
      * @return liste de villes + statut de la requête HTTP
      */
     @GetMapping("/DeptOrderNbHab/{codeDep}")
-    public ResponseEntity<List<Ville>> getNVillesByDepartmentCodeOrderByNbInhabitantsDesc(@PathVariable("codeDep")String codeDep, @RequestParam Integer page, @RequestParam Integer size) {
-        Pageable pagination = PageRequest.of(page, size);
+    public ResponseEntity<List<Ville>> getNVillesByDepartmentCodeOrderByNbInhabitantsDesc(@PathVariable("codeDep")String codeDep, @RequestParam Integer n) {
+        Pageable pagination = PageRequest.of(0, n);
         return ResponseEntity.ok(villeService.extractVillesByDepartementCodeOrderByNbHabDesc(codeDep, pagination));
     }
 }

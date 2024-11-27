@@ -1,12 +1,14 @@
 package fr.diginamic.hello.services;
 
-import fr.diginamic.hello.repositories.DepartementDao;
 import fr.diginamic.hello.httpStatusCode.EnumHttpStatus;
 import fr.diginamic.hello.models.Departement;
+import fr.diginamic.hello.repositories.DepartementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Classe service de traitement des requêtes du controller au repository des départements
@@ -16,14 +18,23 @@ public class DepartementService {
 
     /** Repository contenant les données liées aux départements */
     @Autowired
-    private DepartementDao departementDao;
+    private DepartementRepository departementRepo;
 
     /**
-     * Méthode permettant de demander des départements au repository.
-     * @return départements
+     * Demande au repository les départements contenus en base de données.
+     * @return liste de départements
      */
     public List<Departement> getDepartements() {
-        return departementDao.extractDepartements();
+        return departementRepo.findAll();
+    }
+
+    /**
+     * Demande au repository les départements contenus en base de données, triés par nom.
+     * @param pagination paramètres de pagination
+     * @return liste de départements
+     */
+    public List<Departement> getDepartementsPagination(Pageable pagination) {
+        return departementRepo.findAllOrderByNom(pagination);
     }
 
     /**
@@ -31,23 +42,44 @@ public class DepartementService {
      * @return département
      */
     public Departement getDepartementById(long id) {
-        return departementDao.extractDepartementById(id);
+        Optional<Departement> optDept = departementRepo.findById(id);
+
+        if (optDept.isPresent()) {
+            return optDept.get();
+        }
+        else {
+            return null;
+        }
     }
 
     /**
-     * Méthode permettant de demander un département au repository à partir de son nom.
+     * Demande un département au repository à partir de son code.
      * @return département
      */
     public Departement getDepartementByCode(String code) {
-        return departementDao.extractDepartementByCode(code);
+        Optional<Departement> optDept = departementRepo.findByCode(code);
+
+        if (optDept.isPresent()) {
+            return optDept.get();
+        }
+        else {
+            return null;
+        }
     }
 
     /**
      * Méthode permettant de donner un département au repository à ajouter en base de données.
      * @param dept département à ajouter
      */
-    public void insertDepartement(Departement dept) {
-        departementDao.insertDepartement(dept);
+    public EnumHttpStatus insertDepartement(Departement dept) {
+        Optional<Departement> departementExistant = departementRepo.findByCode(dept.getCode());
+
+        if (departementExistant.isPresent()) {
+            return EnumHttpStatus.CONFLICT;
+        }
+
+        departementRepo.save(dept);
+        return EnumHttpStatus.OK;
     }
 
     /**
@@ -59,16 +91,18 @@ public class DepartementService {
      * @return un enum reflétant le statut de la requête
      */
     public EnumHttpStatus updateDepartement(long id, Departement dept) {
-        Departement deptExistant = departementDao.extractDepartementById(id);
+        Optional<Departement> optDept = departementRepo.findById(id);
 
-        if (deptExistant == null) {
+        if (optDept.isEmpty()) {
             return EnumHttpStatus.NOTFOUND;
         }
 
-        deptExistant.setNom(dept.getNom());
-        deptExistant.setCode(dept.getCode());
-        deptExistant.setVilles(dept.getVilles());
-        departementDao.updateDepartement(deptExistant);
+        Departement departementExistant = optDept.get();
+
+        departementExistant.setNom(dept.getNom());
+        departementExistant.setCode(dept.getCode());
+        departementExistant.setVilles(dept.getVilles());
+        departementRepo.save(departementExistant);
         return EnumHttpStatus.OK;
     }
 
@@ -79,13 +113,13 @@ public class DepartementService {
      * @return un enum reflétant le statut de la requête
      */
     public EnumHttpStatus deleteDepartement(long id) {
-        Departement dept = departementDao.extractDepartementById(id);
+        Optional<Departement> optDept = departementRepo.findById(id);
 
-        if (dept == null) {
+        if (optDept.isEmpty()) {
             return EnumHttpStatus.NOTFOUND;
         }
 
-        departementDao.deleteDepartement(dept);
+        departementRepo.deleteById(id);
         return EnumHttpStatus.OK;
     }
 }

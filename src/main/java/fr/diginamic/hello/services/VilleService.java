@@ -2,7 +2,7 @@ package fr.diginamic.hello.services;
 
 import fr.diginamic.hello.httpStatusCode.EnumHttpStatus;
 import fr.diginamic.hello.models.Ville;
-import fr.diginamic.hello.repositories.Irepositories.VilleRepository;
+import fr.diginamic.hello.repositories.VilleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,13 +20,18 @@ public class VilleService {
     private VilleRepository villeRepo;
 
     /**
-     * Méthode permettant de récupérer des villes du repository.
-     * @return villes
+     * Demande au repository les villes contenues en base de données.
+     * @return liste de villes
      */
     public List<Ville> getVilles() {
         return villeRepo.findAll();
     }
 
+    /**
+     * Demande au repository les villes contenues en base de données triées par nom.
+     * @param pagination paramètres de pagination
+     * @return liste de villes
+     */
     public List<Ville> getVillesPagination(Pageable pagination) {
         return villeRepo.findAllOrderByNom(pagination);
     }
