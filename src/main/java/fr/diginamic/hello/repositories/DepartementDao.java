@@ -1,4 +1,4 @@
-package fr.diginamic.hello.dao;
+package fr.diginamic.hello.repositories;
 
 import fr.diginamic.hello.models.Departement;
 import jakarta.persistence.EntityManager;

@@ -1,4 +1,4 @@
-package fr.diginamic.hello.dao;
+package fr.diginamic.hello.repositories;
 
 import fr.diginamic.hello.models.Ville;
 import jakarta.persistence.*;

@@ -33,7 +33,7 @@ public class Ville implements Serializable {
     private int nbHabitants;
 
     @ManyToOne
-    @JoinColumn(name="CODE_DEPT")
+    @JoinColumn(name="ID_DEPT")
     private Departement departement;
 
     /**
@@ -73,7 +73,7 @@ public class Ville implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Ville ville)) return false;
-        return nbHabitants == ville.nbHabitants && Objects.equals(id, ville.id) && Objects.equals(nom, ville.nom);
+        return id == ville.id && nbHabitants == ville.nbHabitants && Objects.equals(nom, ville.nom) && Objects.equals(departement, ville.departement);
     }
 
     /**

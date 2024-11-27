@@ -5,6 +5,8 @@ import fr.diginamic.hello.models.Ville;
 import fr.diginamic.hello.services.VilleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -35,6 +37,17 @@ public class VilleController {
     }
 
     /**
+     * Méthode permettant de récupérer un ensemble d'objets Ville
+     * avec une pagination.
+     * @return liste de villes
+     */
+    @GetMapping("/liste/pagination")
+    public List<Ville> getVilles(@RequestParam int page, @RequestParam int size) {
+        Pageable pagination = PageRequest.of(page, size);
+        return villeService.getVillesPagination(pagination);
+    }
+
+    /**
      * Méthode permettant de récupérer une ville à partir de son id.
      * @param id identifiant de la ville
      * @return une ville et le statut HTTP de la requête
@@ -59,24 +72,14 @@ public class VilleController {
      * @param nom nom de la ville
      * @return une ville et le statut HTTP de la requête
      */
-    // requête paramétrée
-    @GetMapping("/nom")
-    public ResponseEntity<Ville> getVilleByName(@RequestParam String nom) {
+    @GetMapping("/nom/{nom}")
+    public ResponseEntity<List<Ville>> getVilleByNom(@PathVariable String nom) {
         // Si la requête n'est pas correcte : erreur 400
         if (nom == null || nom.isEmpty()) {
             return ResponseEntity.badRequest().body(null);
         }
 
-        Ville ville = villeService.getVilleByName(nom);
-
-        if (ville == null) {
-            // ressource non trouvée : erreur 404
-            return ResponseEntity.notFound().build();
-        }
-        else {
-            // statut http ok + ville trouvée
-            return ResponseEntity.ok(ville);
-        }
+        return ResponseEntity.ok(villeService.getVilleByNom(nom));
     }
 
     /**
@@ -91,8 +94,12 @@ public class VilleController {
             return ResponseEntity.badRequest().body(null);
         }
 
-        villeService.insertVille(ville);
-        return ResponseEntity.ok(villeService.getVilles());
+        if (villeService.insertVille(ville) == EnumHttpStatus.OK) {
+            return ResponseEntity.ok(villeService.getVilles());
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        }
     }
 
     /**
@@ -133,14 +140,46 @@ public class VilleController {
     }
 
     /**
-     * Retourne les N plus grandes villes d'un département.
-     * @param codeDep code département
-     * @param n nombre de villes souhaité
-     * @return liste de villes
+     * Retourne les villes dont le nom commence par le préfixe donné.
+     * @param prefixe String
+     * @return liste de villes + statut de la requête HTTP
      */
-    @GetMapping("/findByDepartmentCodeOrderByNbInhabitantsDesc/{codeDep}/{n}")
-    public List<Ville> findByDepartmentCodeOrderByNbInhabitantsDesc(@PathVariable("codeDep")String codeDep, @PathVariable("n") Integer n) {
-        return villeService.findByDepartementCodeOrderByNbHabDesc(codeDep,n);
+    // requête paramétrée (à la place de l'URL paramétré)
+    @GetMapping("/prefixe_nom")
+    public ResponseEntity<List<Ville>> getVillesByNomStartingWith(@RequestParam String prefixe) {
+        return ResponseEntity.ok(villeService.extractVillesByNomStartingWith(prefixe));
+    }
+
+    /**
+     * Retourne les villes dont le nombre d'habitants est supérieur à un minimum donné.
+     * @param minHab nombre minimum d'habitants
+     * @return liste de villes + statut de la requête HTTP
+     */
+    @GetMapping("/nb_habitants/{minHab}")
+    public ResponseEntity<List<Ville>> getVillesByNbHabGreaterThan(@PathVariable int minHab) {
+        return ResponseEntity.ok(villeService.extractVillesByNbHabGreaterThan(minHab));
+    }
+
+    /**
+     * Retourne les villes dont le nombre d'habitants est compris dans un intervalle donné.
+     * @param minHab nombre minimum d'habitantes
+     * @param maxHab nombre maximum d'habitants
+     * @return liste de villes + statut de la requête HTTP
+     */
+    @GetMapping("/nb_habitants")
+    public ResponseEntity<List<Ville>> getVillesByNbHabBetween(@RequestParam int minHab, @RequestParam int maxHab) {
+        return ResponseEntity.ok(villeService.extractVillesByNbHabBetween(minHab, maxHab));
+    }
+
+    /**
+     * Retourne les villes d'un département dont le nombre d'habitants est supérieur à un certain seuil.
+     * @param codeDep code du département
+     * @param min nombre minimum d'habitants
+     * @return liste de villes + statut de la requête HTTP
+     */
+    @GetMapping("/DeptAndNbHab/{codeDep}/{min}")
+    public ResponseEntity<List<Ville>> getVillesByDepartementAndNbHabGreaterThan(@PathVariable String codeDep, @PathVariable int min) {
+        return ResponseEntity.ok(villeService.extractVillesByDepartementCodeAndNbHabitantsGreaterThan(codeDep, min));
     }
 
     /**
@@ -149,10 +188,23 @@ public class VilleController {
      * @param codeDep code du département
      * @param min nombre minimum d'habitants
      * @param max nombre maximum d'habitants
-     * @return liste de villes
+     * @return liste de villes + statut de la requête HTTP
      */
-    @GetMapping("/findByDepartmentCodeAndNbInhabitantsBetween/{codeDep}/{min}/{max}")
-    public List<Ville> findByDepartmentCodeAndNbInhabitantsBetween(@PathVariable("codeDep")String codeDep, @PathVariable("min") Integer min,@PathVariable("max") Integer max) {
-        return villeService.findByDepartementCodeAndNbHabBetween(codeDep, min,max);
+    @GetMapping("/DeptAndNbHab/{codeDep}/{min}/{max}")
+    public ResponseEntity<List<Ville>> getVillesByDepartmentCodeAndNbInhabitantsBetween(@PathVariable("codeDep")String codeDep, @PathVariable("min") Integer min, @PathVariable("max") Integer max) {
+        return ResponseEntity.ok(villeService.extractVillesByDepartementCodeAndNbHabBetween(codeDep, min,max));
+    }
+
+    /**
+     * Retourne les N plus grandes villes d'un département.
+     * @param codeDep code département
+     * @param page numéro de la page à afficher
+     * @param size nombre d'éléments à afficher
+     * @return liste de villes + statut de la requête HTTP
+     */
+    @GetMapping("/DeptOrderNbHab/{codeDep}")
+    public ResponseEntity<List<Ville>> getNVillesByDepartmentCodeOrderByNbInhabitantsDesc(@PathVariable("codeDep")String codeDep, @RequestParam Integer page, @RequestParam Integer size) {
+        Pageable pagination = PageRequest.of(page, size);
+        return ResponseEntity.ok(villeService.extractVillesByDepartementCodeOrderByNbHabDesc(codeDep, pagination));
     }
 }

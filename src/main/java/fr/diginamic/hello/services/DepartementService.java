@@ -1,10 +1,8 @@
 package fr.diginamic.hello.services;
 
-import fr.diginamic.hello.dao.DepartementDao;
+import fr.diginamic.hello.repositories.DepartementDao;
 import fr.diginamic.hello.httpStatusCode.EnumHttpStatus;
 import fr.diginamic.hello.models.Departement;
-import fr.diginamic.hello.models.Ville;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,23 +17,6 @@ public class DepartementService {
     /** Repository contenant les données liées aux départements */
     @Autowired
     private DepartementDao departementDao;
-
-    /**
-     * Initialisation des départements en base de données après construction de la table Departement
-     */
-    @PostConstruct
-    public void init() {
-        insertDepartement(new Departement("Paris", "75"));
-        insertDepartement(new Departement("Toulouse", "31"));
-        insertDepartement(new Departement("Yvelines", "78"));
-        insertDepartement(new Departement("Alpes-Maritime", "06"));
-        insertDepartement(new Departement("Aude", "11"));
-        insertDepartement(new Departement("Rhône", "69D"));
-        insertDepartement(new Departement("Ariège", "09"));
-        insertDepartement(new Departement("Pyrénées-Atlantique", "64"));
-        insertDepartement(new Departement("Bouches-du-Rhône", "13"));
-        insertDepartement(new Departement("Hautes-Pyrénées", "65"));
-    }
 
     /**
      * Méthode permettant de demander des départements au repository.

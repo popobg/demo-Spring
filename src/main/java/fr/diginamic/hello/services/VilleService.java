@@ -2,12 +2,13 @@ package fr.diginamic.hello.services;
 
 import fr.diginamic.hello.httpStatusCode.EnumHttpStatus;
 import fr.diginamic.hello.models.Ville;
-import fr.diginamic.hello.dao.VilleDao;
-import jakarta.annotation.PostConstruct;
+import fr.diginamic.hello.repositories.Irepositories.VilleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Classe service de traitement des requêtes du controller au repository des villes
@@ -16,35 +17,18 @@ import java.util.List;
 public class VilleService {
     /** Repository contenant les données liées aux villes */
     @Autowired
-    private VilleDao villeDao;
-
-    /** Repository contenant les données liées aux départements */
-    @Autowired
-    private DepartementService deptService;
+    private VilleRepository villeRepo;
 
     /**
-     * Intialisation de données dans la table Ville.
-     */
-    @PostConstruct
-    public void init() {
-        villeDao.insertVille(new Ville("Nice", 34300, deptService.getDepartementByCode("06")));
-        villeDao.insertVille(new Ville("Carcassonne", 47800, deptService.getDepartementByCode("11")));
-        villeDao.insertVille(new Ville("Narbonne", 53400, deptService.getDepartementByCode("11")));
-        villeDao.insertVille(new Ville("Lyon", 484000, deptService.getDepartementByCode("69D")));
-        villeDao.insertVille(new Ville("Foix", 9703, deptService.getDepartementByCode("09")));
-        villeDao.insertVille(new Ville("Pau", 77200, deptService.getDepartementByCode("64")));
-        villeDao.insertVille(new Ville("Marseille", 850700, deptService.getDepartementByCode("13")));
-        villeDao.insertVille(new Ville("St-Cyr-sur-Mer", 35000, deptService.getDepartementByCode("13")));
-        villeDao.insertVille(new Ville("Tarbes", 40600, deptService.getDepartementByCode("65")));
-        villeDao.insertVille(new Ville("Castres", 40000, deptService.getDepartementByCode("65")));
-    }
-
-    /**
-     * Méthode permettant de récupérer des villes au repository.
+     * Méthode permettant de récupérer des villes du repository.
      * @return villes
      */
     public List<Ville> getVilles() {
-        return villeDao.extractVilles();
+        return villeRepo.findAll();
+    }
+
+    public List<Ville> getVillesPagination(Pageable pagination) {
+        return villeRepo.findAllOrderByNom(pagination);
     }
 
     /**
@@ -52,23 +36,42 @@ public class VilleService {
      * @return ville
      */
     public Ville getVilleById(long id) {
-        return villeDao.extractVilleById(id);
+        Optional<Ville> optVille = villeRepo.findById(id);
+
+        if (optVille.isPresent()) {
+            return optVille.get();
+        }
+        else {
+            return null;
+        }
     }
 
     /**
      * Méthode permettant de demander une ville au repository à partir de son nom.
      * @return ville
      */
-    public Ville getVilleByName(String nom) {
-        return villeDao.extractVilleByName(nom);
+    public List<Ville> getVilleByNom(String nom) {
+        return villeRepo.findByNom(nom);
     }
 
     /**
      * Méthode permettant de donner une ville au repository à ajouter en base de données.
      * @param ville ville à ajouter
      */
-    public void insertVille(Ville ville) {
-        villeDao.insertVille(ville);
+    public EnumHttpStatus insertVille(Ville ville) {
+        List<Ville> villesHomonymes = villeRepo.findByNom(ville.getNom());
+
+        // check si une ville identique existe déjà
+        for (Ville v : villesHomonymes) {
+            if (v.getNom().equals(ville.getNom())
+            && v.getNbHabitants() == ville.getNbHabitants()
+            && v.getDepartement().getId() == (ville.getDepartement().getId())) {
+                return EnumHttpStatus.CONFLICT;
+            }
+        }
+
+        villeRepo.save(ville);
+        return EnumHttpStatus.OK;
     }
 
     /**
@@ -80,15 +83,20 @@ public class VilleService {
      * @return un enum reflétant le statut de la requête
      */
     public EnumHttpStatus updateVille(long id, Ville ville) {
-        Ville villeExistante = villeDao.extractVilleById(id);
+        Optional<Ville> optVille = villeRepo.findById(id);
 
-        if (villeExistante == null) {
+        if (optVille.isEmpty()) {
             return EnumHttpStatus.NOTFOUND;
         }
 
+        Ville villeExistante = optVille.get();
         villeExistante.setNom(ville.getNom());
         villeExistante.setNbHabitants(ville.getNbHabitants());
-        villeDao.updateVille(villeExistante);
+
+        if (!villeExistante.getDepartement().equals(ville.getDepartement())) {
+            villeExistante.setDepartement(ville.getDepartement());
+        }
+        villeRepo.save(villeExistante);
         return EnumHttpStatus.OK;
     }
 
@@ -99,35 +107,76 @@ public class VilleService {
      * @return un enum reflétant le statut de la requête
      */
     public EnumHttpStatus deleteVille(long id) {
-        Ville ville = villeDao.extractVilleById(id);
+        Optional<Ville> optVille = villeRepo.findById(id);
 
-        if (ville == null) {
+        if (optVille.isEmpty()) {
             return EnumHttpStatus.NOTFOUND;
         }
 
-        villeDao.deleteVille(ville);
+        villeRepo.deleteById(id);
         return EnumHttpStatus.OK;
     }
 
     /**
-     * Demande au repository la liste des villes triées par département et habitants.
-     * @param codeDep code du département
-     * @param n nombre d'habitants
+     * Demande au repository la liste des villes dont le nom commence par le préfixe donné.
+     * @param prefixe String
      * @return liste de villes
      */
-    public List<Ville> findByDepartementCodeOrderByNbHabDesc(String codeDep, int n) {
-        return villeDao.findByDepartementCodeOrderByNbHabDesc(codeDep, n);
+    public List<Ville> extractVillesByNomStartingWith(String prefixe) {
+        return villeRepo.findByNomStartingWith(prefixe);
     }
 
     /**
-     * Demande au repository la liste des N villes triées par code de départements
-     * et nombre d'habitants.
+     * Demande au repository la liste des villes dont le nombre d'habitants
+     * est supérieur à un seuil donné.
+     * @param minHab nombre minimum d'habitants
+     * @return liste de villes
+     */
+    public List<Ville> extractVillesByNbHabGreaterThan(int minHab) {
+        return villeRepo.findByNbHabitantsGreaterThan(minHab);
+    }
+
+    /**
+     * Demande au repository la liste des N plus grandes villes d'un département.
+     * @param codeDep code du département
+     * @param pagination page et nombre d'éléments
+     * @return liste de villes
+     */
+    public List<Ville> extractVillesByDepartementCodeOrderByNbHabDesc(String codeDep, Pageable pagination) {
+        return villeRepo.findByDepartementCodeOrderByNbHabitantsDesc(codeDep, pagination);
+    }
+
+    /**
+     * Demande au repository la liste des villes dont le nombre d'habitants est compris
+     * dans un intervalle donné.
+     * @param minHab nombre minimum d'habitants
+     * @param maxHab nombre maximum d'habitants
+     * @return liste de villes
+     */
+    public List<Ville> extractVillesByNbHabBetween(int minHab, int maxHab) {
+        return villeRepo.findByNbHabitantsBetween(minHab, maxHab);
+    }
+
+    /**
+     * Demande au repository la liste des villes d'un département dont le nombre d'habitants
+     * est supérieur à un minimum donné.
+     * @param departementCode code du département
+     * @param minHabitants nombre minimum d'habitants
+     * @return liste des villes
+     */
+    public List<Ville> extractVillesByDepartementCodeAndNbHabitantsGreaterThan(String departementCode, int minHabitants) {
+        return villeRepo.findByDepartementCodeAndNbHabitantsGreaterThan(departementCode, minHabitants);
+    }
+
+    /**
+     * Demande au repository la liste des villes d'un département dont le nombre d'habitants
+     * est compris dans un intervalle donné.
      * @param codeDep code du département
      * @param min nombre minimum d'habitants
      * @param max nombre maximum d'habitants
      * @return liste de villes
      */
-    public List<Ville> findByDepartementCodeAndNbHabBetween(String codeDep, int min, int max) {
-        return villeDao.findByDepartementCodeAndNbHabBetween(codeDep, min, max);
+    public List<Ville> extractVillesByDepartementCodeAndNbHabBetween(String codeDep, int min, int max) {
+        return villeRepo.findByDepartementCodeAndNbHabitantsBetween(codeDep, min, max);
     }
 }
