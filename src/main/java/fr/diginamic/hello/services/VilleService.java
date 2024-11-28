@@ -69,7 +69,11 @@ public class VilleService {
      * Méthode permettant de demander une ville au repository à partir de son id.
      * @return ville
      */
-    public Ville getVilleById(long id) throws RessourceNotFoundException {
+    public Ville getVilleById(Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
+        if (id == null) {
+            throw new RequeteIncorrecteException("Il faut renseigner un id.");
+        }
+
         Optional<Ville> optVille = villeRepo.findById(id);
 
         if (optVille.isPresent()) {
@@ -127,7 +131,11 @@ public class VilleService {
      * @param id identifiant de la ville à modifier
      * @param ville objet ville contenant les nouvelles informations
      */
-    public void updateVille(long id, Ville ville) throws RessourceNotFoundException, RequeteIncorrecteException {
+    public void updateVille(Long id, Ville ville) throws RessourceNotFoundException, RequeteIncorrecteException {
+        if (id == null) {
+            throw new RequeteIncorrecteException("Il faut renseigner un id.");
+        }
+
         Optional<Ville> optVille = villeRepo.findById(id);
 
         if (optVille.isEmpty()) {
@@ -151,7 +159,11 @@ public class VilleService {
      * et de le donner au repository pour le supprimer.
      * @param id identifiant de la ville à supprimer
      */
-    public void deleteVille(long id) throws RessourceNotFoundException {
+    public void deleteVille(Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
+        if (id == null) {
+            throw new RequeteIncorrecteException("Il faut renseigner un id.");
+        }
+
         Optional<Ville> optVille = villeRepo.findById(id);
 
         if (optVille.isEmpty()) {
