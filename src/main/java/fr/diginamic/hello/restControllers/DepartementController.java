@@ -1,13 +1,19 @@
 package fr.diginamic.hello.restControllers;
 
-import fr.diginamic.hello.httpStatusCode.EnumHttpStatus;
+import fr.diginamic.hello.dto.DepartementDto;
+import fr.diginamic.hello.exceptions.RequeteIncorrecteException;
+import fr.diginamic.hello.exceptions.RessourceExistanteException;
+import fr.diginamic.hello.exceptions.RessourceNotFoundException;
+import fr.diginamic.hello.mappers.DepartementMapper;
 import fr.diginamic.hello.models.Departement;
 import fr.diginamic.hello.services.DepartementService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -31,9 +37,19 @@ public class DepartementController {
      * Méthode permettant de récupérer un ensemble d'objets Departement.
      * @return liste de départements
      */
+    @Operation(summary = "Récupération des départements")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                description = "Retourne un tableau JSON des départements",
+                content = {@Content(mediaType = "application/json",
+                    schema = @Schema(implementation = DepartementDto.class))}),
+            @ApiResponse(responseCode = "404",
+                description = "Aucun département n'a été trouvé")
+    })
     @GetMapping("/liste")
-    public List<Departement> getDepartements() {
-        return deptService.getDepartements();
+    public List<DepartementDto> getDepartements() throws RessourceNotFoundException {
+        List<Departement> departements = deptService.getDepartements();
+        return DepartementMapper.toDtos(departements);
     }
 
     /**
@@ -42,10 +58,21 @@ public class DepartementController {
      * @param n nombre d'éléments à afficher
      * @return liste de départements
      */
+    @Operation(summary = "Récupération des départements paginés")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un tableau JSON des départements avec la pagination demandée",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = DepartementDto.class))}),
+            @ApiResponse(responseCode = "404",
+                    description = "Aucun département n'a été trouvé"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
+    })
     @GetMapping("/liste/pagination")
-    public List<Departement> getDepartementsPagination(@RequestParam int n) {
-        Pageable pagination = PageRequest.of(0, n);
-        return deptService.getDepartementsPagination(pagination);
+    public List<DepartementDto> getDepartementsPagination(@RequestParam int n) throws RequeteIncorrecteException, RessourceNotFoundException {
+        List<Departement> departements = deptService.getDepartementsPagination(n);
+        return DepartementMapper.toDtos(departements);
     }
 
     /**
@@ -53,23 +80,22 @@ public class DepartementController {
      * @param id identifiant du département
      * @return un département et le statut HTTP de la requête
      */
+    @Operation(summary = "Récupération d'un département à partir de son ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un objet JSON département",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = DepartementDto.class))}),
+            @ApiResponse(responseCode = "404",
+                    description = "Aucun département n'a été trouvé"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
+    })
     // URL paramétrée
     @GetMapping("/{id}")
-    public ResponseEntity<Departement> getDepartementById(@PathVariable Long id) {
-        if (id == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-
+    public DepartementDto getDepartementById(@PathVariable Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
         Departement dept = deptService.getDepartementById(id);
-
-        if (dept == null) {
-            // ressource non trouvée : erreur 404
-            return ResponseEntity.notFound().build();
-        }
-        else {
-            // statut http ok + département trouvé
-            return ResponseEntity.ok(dept);
-        }
+        return DepartementMapper.toDto(dept);
     }
 
     /**
@@ -77,71 +103,82 @@ public class DepartementController {
      * @param code code du département
      * @return un département et le statut HTTP de la requête
      */
-    // requête paramétrée
+    @Operation(summary = "Récupération d'un département à partir de son code")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un objet JSON département",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = DepartementDto.class))}),
+            @ApiResponse(responseCode = "404",
+                    description = "Aucun département n'a été trouvé"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
+    })
     @GetMapping("/code")
-    public ResponseEntity<Departement> getDepartementByCode(@RequestParam String code) {
-        // Si la requête n'est pas correcte : erreur 400
-        if (code == null || code.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-
+    // requête paramétrée
+    public DepartementDto getDepartementByCode(@RequestParam String code) throws RessourceNotFoundException, RequeteIncorrecteException {
         Departement dept = deptService.getDepartementByCode(code);
-
-        if (dept == null) {
-            // ressource non trouvée : erreur 404
-            return ResponseEntity.notFound().build();
-        }
-        else {
-            // statut http ok + département trouvé
-            return ResponseEntity.ok(dept);
-        }
+        return DepartementMapper.toDto(dept);
     }
 
     /**
      * Méthode permettant d'ajouter un objet Departement aux départements enregistrés.
      * @param dept département
-     * @param result objet injecté par Spring Validation pour vérifier la validité des champs de ville
+     * @param result objet injecté par Spring Validation pour vérifier la validité des champs de VilleDTO
      * @return une liste de départements et le statut HTTP de la requête accompagné d'un message
      */
+    @Operation(summary = "Création et ajout d'un département")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un tableau JSON de départements, département ajouté inclus",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = DepartementDto.class))}),
+            @ApiResponse(responseCode = "404",
+                    description = "Aucun département n'a été trouvé"),
+            @ApiResponse(responseCode = "409",
+                    description = "Une ressource identique existe déjà"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
+    })
     @PostMapping
-    public ResponseEntity<List<Departement>> addDepartement(@Valid @RequestBody Departement dept, BindingResult result) {
+    public ResponseEntity<List<DepartementDto>> addDepartement(@Valid @RequestBody DepartementDto dept, BindingResult result) throws RessourceNotFoundException, RessourceExistanteException, RequeteIncorrecteException {
         if (result.hasErrors()) {
-            return ResponseEntity.badRequest().body(null);
+            throw new RequeteIncorrecteException(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
         }
 
-        if (deptService.insertDepartement(dept) == EnumHttpStatus.OK) {
-            return ResponseEntity.ok(deptService.getDepartements());
-        }
-        else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        deptService.insertDepartement(DepartementMapper.toEntity(dept));
 
-        }
+        List<Departement> departements = deptService.getDepartements();
+        return ResponseEntity.ok(DepartementMapper.toDtos(departements));
     }
 
     /**
      * Méthode permettant de modifier les informations d'un département existant.
      * @param id identifiant du département à modifier
      * @param dept département contenant les nouvelles informations
+     * @param result objet injecté par Spring Validation pour vérifier la validité des champs de VilleDTO
      * @return le statut HTTP de la requête accompagné d'un message
      */
+    @Operation(summary = "Mise-à-jour des données d'un département")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un message informant l'utilisateur que la mise-à-jour a été effectuée",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))}),
+            @ApiResponse(responseCode = "404",
+                    description = "Aucun département n'a été trouvé"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
+    })
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateVille(@PathVariable Long id, @Valid @RequestBody Departement dept, BindingResult result) {
-        // Permet d'avoir l'ensemble des erreurs
+    public ResponseEntity<String> updateVille(@PathVariable Long id, @Valid @RequestBody DepartementDto dept, BindingResult result) throws RessourceNotFoundException, RequeteIncorrecteException {
         if (result.hasErrors()) {
+            // Permet de visualiser l'ensemble des erreurs de correspondance au DTO
             return ResponseEntity.badRequest().body(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
         }
 
-        if (id == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-
-        if (deptService.updateDepartement(id, dept) == EnumHttpStatus.OK) {
-            return ResponseEntity.ok(String.format("Le département %s a été mis à jour avec succès.", dept.getNom()));
-        }
-        else {
-            // Erreur 404 not found
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("Le département d'id %s n'existe pas.", id));
-        }
+        deptService.updateDepartement(id, DepartementMapper.toEntity(dept));
+        return ResponseEntity.ok(String.format("Le département %s a été mis à jour avec succès.", dept.getNomDepartement()));
     }
 
     /**
@@ -149,18 +186,20 @@ public class DepartementController {
      * @param id identifiant du département
      * @return le statut HTTP de la requête accompagné d'un message
      */
+    @Operation(summary = "Suppression d'un département et des villes qui lui sont rattachées")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un message informant l'utilisateur que la suppression a été effectuée",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class))}),
+            @ApiResponse(responseCode = "404",
+                    description = "Aucun département n'a été trouvé"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteVille(@PathVariable Long id) {
-        if (id == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-
-        if (deptService.deleteDepartement(id) == EnumHttpStatus.OK) {
-            return ResponseEntity.ok(String.format("Le département d'id %s a été supprimé avec succès.", id));
-        }
-        else {
-            // Erreur 404 not found
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("Le département d'id %s n'existe pas.", id));
-        }
+    public ResponseEntity<String> deleteVille(@PathVariable Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
+        deptService.deleteDepartement(id);
+        return ResponseEntity.ok(String.format("Le département d'id %s a été supprimé avec succès.", id));
     }
 }
