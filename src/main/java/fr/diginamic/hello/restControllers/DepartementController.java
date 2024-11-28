@@ -1,13 +1,14 @@
 package fr.diginamic.hello.restControllers;
 
-import fr.diginamic.hello.httpStatusCode.EnumHttpStatus;
+import fr.diginamic.hello.dto.DepartementDto;
+import fr.diginamic.hello.exceptions.RequeteIncorrecteException;
+import fr.diginamic.hello.exceptions.RessourceExistanteException;
+import fr.diginamic.hello.exceptions.RessourceNotFoundException;
+import fr.diginamic.hello.mappers.DepartementMapper;
 import fr.diginamic.hello.models.Departement;
 import fr.diginamic.hello.services.DepartementService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -32,8 +33,9 @@ public class DepartementController {
      * @return liste de départements
      */
     @GetMapping("/liste")
-    public List<Departement> getDepartements() {
-        return deptService.getDepartements();
+    public List<DepartementDto> getDepartements() throws RessourceNotFoundException {
+        List<Departement> departements = deptService.getDepartements();
+        return DepartementMapper.toDtos(departements);
     }
 
     /**
@@ -43,9 +45,9 @@ public class DepartementController {
      * @return liste de départements
      */
     @GetMapping("/liste/pagination")
-    public List<Departement> getDepartementsPagination(@RequestParam int n) {
-        Pageable pagination = PageRequest.of(0, n);
-        return deptService.getDepartementsPagination(pagination);
+    public List<DepartementDto> getDepartementsPagination(@RequestParam int n) throws RequeteIncorrecteException, RessourceNotFoundException {
+        List<Departement> departements = deptService.getDepartementsPagination(n);
+        return DepartementMapper.toDtos(departements);
     }
 
     /**
@@ -55,21 +57,9 @@ public class DepartementController {
      */
     // URL paramétrée
     @GetMapping("/{id}")
-    public ResponseEntity<Departement> getDepartementById(@PathVariable Long id) {
-        if (id == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-
+    public DepartementDto getDepartementById(@PathVariable Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
         Departement dept = deptService.getDepartementById(id);
-
-        if (dept == null) {
-            // ressource non trouvée : erreur 404
-            return ResponseEntity.notFound().build();
-        }
-        else {
-            // statut http ok + département trouvé
-            return ResponseEntity.ok(dept);
-        }
+        return DepartementMapper.toDto(dept);
     }
 
     /**
@@ -79,69 +69,45 @@ public class DepartementController {
      */
     // requête paramétrée
     @GetMapping("/code")
-    public ResponseEntity<Departement> getDepartementByCode(@RequestParam String code) {
-        // Si la requête n'est pas correcte : erreur 400
-        if (code == null || code.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-
+    public DepartementDto getDepartementByCode(@RequestParam String code) throws RessourceNotFoundException, RequeteIncorrecteException {
         Departement dept = deptService.getDepartementByCode(code);
-
-        if (dept == null) {
-            // ressource non trouvée : erreur 404
-            return ResponseEntity.notFound().build();
-        }
-        else {
-            // statut http ok + département trouvé
-            return ResponseEntity.ok(dept);
-        }
+        return DepartementMapper.toDto(dept);
     }
 
     /**
      * Méthode permettant d'ajouter un objet Departement aux départements enregistrés.
      * @param dept département
-     * @param result objet injecté par Spring Validation pour vérifier la validité des champs de ville
+     * @param result objet injecté par Spring Validation pour vérifier la validité des champs de VilleDTO
      * @return une liste de départements et le statut HTTP de la requête accompagné d'un message
      */
     @PostMapping
-    public ResponseEntity<List<Departement>> addDepartement(@Valid @RequestBody Departement dept, BindingResult result) {
+    public ResponseEntity<List<DepartementDto>> addDepartement(@Valid @RequestBody DepartementDto dept, BindingResult result) throws RessourceNotFoundException, RessourceExistanteException, RequeteIncorrecteException {
         if (result.hasErrors()) {
-            return ResponseEntity.badRequest().body(null);
+            throw new RequeteIncorrecteException(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
         }
 
-        if (deptService.insertDepartement(dept) == EnumHttpStatus.OK) {
-            return ResponseEntity.ok(deptService.getDepartements());
-        }
-        else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        deptService.insertDepartement(DepartementMapper.toEntity(dept));
 
-        }
+        List<Departement> departements = deptService.getDepartements();
+        return ResponseEntity.ok(DepartementMapper.toDtos(departements));
     }
 
     /**
      * Méthode permettant de modifier les informations d'un département existant.
      * @param id identifiant du département à modifier
      * @param dept département contenant les nouvelles informations
+     * @param result objet injecté par Spring Validation pour vérifier la validité des champs de VilleDTO
      * @return le statut HTTP de la requête accompagné d'un message
      */
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateVille(@PathVariable Long id, @Valid @RequestBody Departement dept, BindingResult result) {
-        // Permet d'avoir l'ensemble des erreurs
+    public ResponseEntity<String> updateVille(@PathVariable Long id, @Valid @RequestBody DepartementDto dept, BindingResult result) throws RessourceNotFoundException, RequeteIncorrecteException {
         if (result.hasErrors()) {
+            // Permet de visualiser l'ensemble des erreurs de correspondance au DTO
             return ResponseEntity.badRequest().body(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
         }
 
-        if (id == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-
-        if (deptService.updateDepartement(id, dept) == EnumHttpStatus.OK) {
-            return ResponseEntity.ok(String.format("Le département %s a été mis à jour avec succès.", dept.getNom()));
-        }
-        else {
-            // Erreur 404 not found
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("Le département d'id %s n'existe pas.", id));
-        }
+        deptService.updateDepartement(id, DepartementMapper.toEntity(dept));
+        return ResponseEntity.ok(String.format("Le département %s a été mis à jour avec succès.", dept.getNomDepartement()));
     }
 
     /**
@@ -150,17 +116,8 @@ public class DepartementController {
      * @return le statut HTTP de la requête accompagné d'un message
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteVille(@PathVariable Long id) {
-        if (id == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-
-        if (deptService.deleteDepartement(id) == EnumHttpStatus.OK) {
-            return ResponseEntity.ok(String.format("Le département d'id %s a été supprimé avec succès.", id));
-        }
-        else {
-            // Erreur 404 not found
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("Le département d'id %s n'existe pas.", id));
-        }
+    public ResponseEntity<String> deleteVille(@PathVariable Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
+        deptService.deleteDepartement(id);
+        return ResponseEntity.ok(String.format("Le département d'id %s a été supprimé avec succès.", id));
     }
 }

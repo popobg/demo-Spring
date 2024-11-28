@@ -22,18 +22,18 @@ public class Ville implements Serializable {
     @NotNull(message = "Le nom est obligatoire.")
     @NotEmpty(message = "Le nom est obligatoire.")
     @NotBlank(message = "Le nom est obligatoire.")
-    @Size(min = 2, message = "Le nom doit comporter au moins deux caractères.")
+    @Size(min = 2, message = "Le nom de la ville doit comporter au moins deux caractères.")
     @Column(name="NOM")
     private String nom;
 
     /** Nombre d'habitants dans la ville */
     @NotNull(message = "Le nombre d'habitants est obligatoire.")
-    @Min(value = 1)
+    @Min(value = 10, message = "La ville doit compter au moins 10 habitants.")
     @Column(name="NB_HABITANTS")
     private int nbHabitants;
 
     @ManyToOne
-    @JoinColumn(name="ID_DEPT")
+    @JoinColumn(name="ID_DEPT", nullable = true)
     private Departement departement;
 
     /**
@@ -47,7 +47,8 @@ public class Ville implements Serializable {
      * @param nom nom de la ville
      * @param nbHabitants nombre d'habitants
      */
-    public Ville(String nom, int nbHabitants) {
+    public Ville(long id, String nom, int nbHabitants) {
+        this.id = id;
         this.nom = nom;
         this.nbHabitants = nbHabitants;
     }

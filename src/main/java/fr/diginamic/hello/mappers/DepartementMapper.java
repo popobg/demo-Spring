@@ -4,21 +4,42 @@ import fr.diginamic.hello.dto.DepartementDto;
 import fr.diginamic.hello.models.Departement;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 public class DepartementMapper {
 
-    public DepartementDto toDto(Departement departement) {
-        DepartementDto departementDto = new DepartementDto();
-        departementDto.setCodeDepartement(departement.getCode());
-        departementDto.setNomDepartement(departement.getNom());
-        departementDto.setNbHabitants(departement.getVilles().stream().mapToInt(v -> v.getNbHabitants()).sum());
-        return departementDto;
+    /**
+     * Map un objet DepartementDto à partir d'une entité JPA Departement.
+     * @param departement entité JPA département
+     * @return objet DepartementDto
+     */
+    public static DepartementDto toDto(Departement departement) {
+        return new DepartementDto(departement.getId(), departement.getCode(), departement.getNom(), departement.getVilles().stream().mapToInt(v -> v.getNbHabitants()).sum());
     }
 
-    public Departement toEntity(DepartementDto departementDto) {
-        Departement departement = new Departement();
-        departement.setCode(departementDto.getCodeDepartement());
-        departement.setNom(departementDto.getNomDepartement());
-        return departement;
+    /**
+     * Map une liste d'objets DepartementDto à partir d'une liste d'entités JPA Departement.
+     * @param departements liste d'entités Departement
+     * @return liste d'objets DepartementDto
+     */
+    public static List<DepartementDto> toDtos(List<Departement> departements) {
+        List<DepartementDto> departementDtos = new ArrayList<>();
+
+        for (Departement departement : departements) {
+            departementDtos.add(toDto(departement));
+        }
+
+        return departementDtos;
+    }
+
+    /**
+     * Map une entité JPA Departement à partir d'un objet DepartementDto.
+     * @param departementDto objet DepartementDto
+     * @return entité JPA Departement
+     */
+    public static Departement toEntity(DepartementDto departementDto) {
+        return new Departement(departementDto.getId(), departementDto.getNomDepartement(), departementDto.getCodeDepartement());
     }
 }

@@ -24,11 +24,12 @@ public class Departement implements Serializable {
     @NotNull(message = "Le nom est obligatoire.")
     @NotEmpty(message = "Le nom est obligatoire.")
     @NotBlank(message = "Le nom est obligatoire.")
-    @Size(min = 2, message = "Le nom doit comporter au moins deux caractères.")
+    @Size(min = 3, message = "Le nom du département doit comporter au moins trois caractères.")
     @Column(name="NOM")
     private String nom;
 
-    @Column(name="CODE")
+    @Column(name="CODE", unique = true)
+    @Size(min = 2, max = 3, message = "Le code département doit contenir 2 à 3 caractères.")
     private String code;
 
     // évite la boucle infinie à la création des objets
@@ -46,7 +47,17 @@ public class Departement implements Serializable {
     public Departement() {
     }
 
+    /**
+     * Constructeur
+     * @param nom nom du département
+     * @param code code du département
+     */
     public Departement(String nom, String code) {
+        this(0, nom, code);
+    }
+
+    public Departement(long id, String nom, String code) {
+        this.id = id;
         this.nom = nom;
         this.code = code;
     }
