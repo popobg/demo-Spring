@@ -66,7 +66,7 @@ public class Departement implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Departement that)) return false;
-        return id == that.id && Objects.equals(nom, that.nom) && Objects.equals(code, that.code) && Objects.equals(villes, that.villes);
+        return id == that.id && Objects.equals(nom, that.nom) && Objects.equals(code, that.code);
     }
 
     @Override

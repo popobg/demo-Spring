@@ -48,18 +48,18 @@ public class Ville implements Serializable {
      * @param nbHabitants nombre d'habitants
      */
     public Ville(long id, String nom, int nbHabitants) {
-        this.id = id;
-        this.nom = nom;
-        this.nbHabitants = nbHabitants;
+        this(id, nom, nbHabitants, null);
     }
 
     /**
      * Constructeur
+     * @param id identifiant de la ville
      * @param nom nom de la ville
      * @param nbHabitants nombre d'habitants
      * @param departement département de la ville
      */
-    public Ville(String nom, int nbHabitants, Departement departement) {
+    public Ville(long id, String nom, int nbHabitants, Departement departement) {
+        this.id = id;
         this.nom = nom;
         this.nbHabitants = nbHabitants;
         this.departement = departement;
