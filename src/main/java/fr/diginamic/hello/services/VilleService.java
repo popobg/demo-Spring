@@ -268,6 +268,8 @@ public class VilleService {
      * @return liste de villes
      */
     public List<Ville> extractVillesByDepartementCodeAndNbHabBetween(String codeDep, int min, int max) throws RessourceNotFoundException {
+//         Ecrire un test qui vérifie que min < max (pareil pour tous les endroits avec min-max)
+
         List<Ville> villes = villeRepo.findByDepartementCodeAndNbHabitantsBetween(codeDep, min, max);
 
         if (villes.isEmpty()) {
