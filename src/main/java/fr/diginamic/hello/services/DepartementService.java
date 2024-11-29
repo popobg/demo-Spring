@@ -30,8 +30,9 @@ public class DepartementService {
     private VilleRepository villeRepo;
 
     /**
-     * Demande au repository les départements contenus en base de données.
+     * Récupère les départements
      * @return liste de départements
+     * @throws RessourceNotFoundException aucun département à retourner
      */
     public List<Departement> getDepartements() throws RessourceNotFoundException {
         List<Departement> departements = departementRepo.findAll();
@@ -44,9 +45,11 @@ public class DepartementService {
     }
 
     /**
-     * Demande au repository les départements contenus en base de données, triés par nom.
-     * @param n nombre d'éléments à afficher
+     * Récupère les départements triés par nom et paginés.
+     * @param n nombre d'objets à afficher sur la page
      * @return liste de départements
+     * @throws RessourceNotFoundException aucun département à retourner
+     * @throws RequeteIncorrecteException les paramètres reçus en requête sont invalides
      */
     public List<Departement> getDepartementsPagination(int n) throws RequeteIncorrecteException, RessourceNotFoundException {
         if (n <= 0) {
@@ -64,8 +67,11 @@ public class DepartementService {
     }
 
     /**
-     * Méthode permettant de demander un département au repository à partir de son id.
+     * Récupère un département à partir de son ID.
+     * @param id identifiant du département
      * @return département
+     * @throws RessourceNotFoundException le département n'a pas pu être trouvé à partir de l'ID donné
+     * @throws RequeteIncorrecteException les paramètres reçus en requête sont invalides
      */
     public Departement getDepartementById(Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
         if (id == null) {
@@ -83,8 +89,11 @@ public class DepartementService {
     }
 
     /**
-     * Demande un département au repository à partir de son code.
+     * Récupère un département à partir de son code.
+     * @param code code du département
      * @return département
+     * @throws RessourceNotFoundException le département n'a pas pu être trouvé à partir du code donné
+     * @throws RequeteIncorrecteException les paramètres reçus en requête sont invalides
      */
     public Departement getDepartementByCode(String code) throws RessourceNotFoundException, RequeteIncorrecteException {
         if (code == null || code.isEmpty()) {
@@ -102,8 +111,9 @@ public class DepartementService {
     }
 
     /**
-     * Méthode permettant de donner un département au repository à ajouter en base de données.
+     * Ajoute un département.
      * @param dept département à ajouter
+     * @throws RessourceExistanteException le département à ajouter existe déjà dans la base de données
      */
     public void insertDepartement(Departement dept) throws RessourceExistanteException {
         Optional<Departement> departementExistant = departementRepo.findByCode(dept.getCode());
@@ -116,11 +126,11 @@ public class DepartementService {
     }
 
     /**
-     * Méthode récupérant un département existant à partir de son id,
-     * et mettant-à-jour ses informations.
-     * Passage ensuite au repository pour persistance en base de données.
+     * Met-à-jour les données d'un département existant.
      * @param id identifiant du département à modifier
      * @param dept objet département contenant les nouvelles informations
+     * @throws RessourceNotFoundException le département n'a pas pu être trouvé à partir de l'ID donné
+     * @throws RequeteIncorrecteException les paramètres reçus en requête sont invalides
      */
     public void updateDepartement(Long id, Departement dept) throws RessourceNotFoundException, RequeteIncorrecteException {
         if (id == null) {
@@ -134,17 +144,18 @@ public class DepartementService {
         }
 
         Departement departementExistant = optDept.get();
-
         departementExistant.setNom(dept.getNom());
         departementExistant.setCode(dept.getCode());
         departementExistant.setVilles(dept.getVilles());
+
         departementRepo.save(departementExistant);
     }
 
     /**
-     * Méthode permettant de trouver le département existant à partir de son id,
-     * et de le donner au repository pour le supprimer.
+     * Supprimer un département et les villes de ce département.
      * @param id identifiant du département à supprimer
+     * @throws RessourceNotFoundException le département n'a pas pu être trouvé à partir de l'ID donné
+     * @throws RequeteIncorrecteException les paramètres reçus en requête sont invalides
      */
     public void deleteDepartement(Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
         if (id == null) {

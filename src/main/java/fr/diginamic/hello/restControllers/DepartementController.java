@@ -7,6 +7,7 @@ import fr.diginamic.hello.exceptions.RessourceNotFoundException;
 import fr.diginamic.hello.mappers.DepartementMapper;
 import fr.diginamic.hello.models.Departement;
 import fr.diginamic.hello.services.DepartementService;
+import fr.diginamic.hello.utils.CSVGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,6 +15,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -33,9 +37,14 @@ public class DepartementController {
     @Autowired
     private DepartementService deptService;
 
+    /** Classe utilitaire permettant de mapper les propriétés des entités en fichier CSV */
+    @Autowired
+    private CSVGenerator csvGenerator;
+
     /**
-     * Méthode permettant de récupérer un ensemble d'objets Departement.
+     * Récupère une liste d'objets Departement.
      * @return liste de départements
+     * @throws RessourceNotFoundException il n'y a pas de département à retourner
      */
     @Operation(summary = "Récupération des départements")
     @ApiResponses(value = {
@@ -53,10 +62,12 @@ public class DepartementController {
     }
 
     /**
-     * Méthode permettant de récupérer un ensemble d'objets Departement
+     * Récupère une liste d'objets Departement
      * triés par nom avec une pagination.
      * @param n nombre d'éléments à afficher
      * @return liste de départements
+     * @throws RessourceNotFoundException il n'y a pas de département à retourner
+     * @throws RequeteIncorrecteException les paramètres de pagination donnés sont invalides
      */
     @Operation(summary = "Récupération des départements paginés")
     @ApiResponses(value = {
@@ -76,9 +87,11 @@ public class DepartementController {
     }
 
     /**
-     * Méthode permettant de récupérer un département à partir de son id.
+     * Récupère un département à partir de son id.
      * @param id identifiant du département
      * @return un département et le statut HTTP de la requête
+     * @throws RessourceNotFoundException le département n'a pas pu être trouvé à partir de l'ID
+     * @throws RequeteIncorrecteException l'ID donné en requête ne correspond pas à un nombre valide
      */
     @Operation(summary = "Récupération d'un département à partir de son ID")
     @ApiResponses(value = {
@@ -99,9 +112,11 @@ public class DepartementController {
     }
 
     /**
-     * Méthode permettant de récupérer un département à partir de son nom.
+     * Récupère un département à partir de son nom.
      * @param code code du département
      * @return un département et le statut HTTP de la requête
+     * @throws RessourceNotFoundException le département n'a pas pu être trouvé à partir du code
+     * @throws RequeteIncorrecteException le code donné en paramètre n'a pas un format valide
      */
     @Operation(summary = "Récupération d'un département à partir de son code")
     @ApiResponses(value = {
@@ -122,10 +137,13 @@ public class DepartementController {
     }
 
     /**
-     * Méthode permettant d'ajouter un objet Departement aux départements enregistrés.
+     * Ajoute un objet Departement aux départements enregistrés.
      * @param dept département
      * @param result objet injecté par Spring Validation pour vérifier la validité des champs de VilleDTO
      * @return une liste de départements et le statut HTTP de la requête accompagné d'un message
+     * @throws RessourceNotFoundException s'il n'y a pas de départements à renvoyer
+     * @throws RessourceExistanteException le département à ajouter existe déjà dans la base de données
+     * @throws RequeteIncorrecteException les informations données en paramètre sont invalides
      */
     @Operation(summary = "Création et ajout d'un département")
     @ApiResponses(value = {
@@ -153,11 +171,13 @@ public class DepartementController {
     }
 
     /**
-     * Méthode permettant de modifier les informations d'un département existant.
+     * Modifie les informations d'un département existant.
      * @param id identifiant du département à modifier
      * @param dept département contenant les nouvelles informations
      * @param result objet injecté par Spring Validation pour vérifier la validité des champs de VilleDTO
      * @return le statut HTTP de la requête accompagné d'un message
+     * @throws RessourceNotFoundException le département n'a pas pu être trouvé à partir de l'ID
+     * @throws RequeteIncorrecteException l'ID donné en paramètre ne correspond pas à un nombre valide
      */
     @Operation(summary = "Mise-à-jour des données d'un département")
     @ApiResponses(value = {
@@ -182,9 +202,11 @@ public class DepartementController {
     }
 
     /**
-     * Méthode permettant de supprimer un département à partir de son identifiant.
+     * Supprime un département à partir de son identifiant.
      * @param id identifiant du département
      * @return le statut HTTP de la requête accompagné d'un message
+     * @throws RessourceNotFoundException le département n'a pas pu être trouvé à partir de l'ID
+     * @throws RequeteIncorrecteException l'ID donné en paramètre ne correspond pas à un nombre valide
      */
     @Operation(summary = "Suppression d'un département et des villes qui lui sont rattachées")
     @ApiResponses(value = {
@@ -201,5 +223,29 @@ public class DepartementController {
     public ResponseEntity<String> deleteVille(@PathVariable Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
         deptService.deleteDepartement(id);
         return ResponseEntity.ok(String.format("Le département d'id %s a été supprimé avec succès.", id));
+    }
+
+    /**
+     * Convertit les données des départements en fichier CSV.
+     * @return fichier CSV
+     * @throws RessourceNotFoundException il n'y a de département à retourner
+     */
+    @Operation(summary = "Conversion des départements en fichier CSV")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un fichier CSV contenant les départements (code, nom"),
+            @ApiResponse(responseCode = "404",
+                    description = "Une ressource n'a pas été trouvée")
+    })
+    @GetMapping("/csv")
+    public ResponseEntity<String> generateCsvFile() throws RessourceNotFoundException {
+        List<Departement> departements = deptService.getDepartements();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "departements.csv");
+
+        String csvBytes = csvGenerator.generateCSVDepartement(departements);
+        return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
     }
 }

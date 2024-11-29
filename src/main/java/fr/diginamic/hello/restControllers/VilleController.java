@@ -5,8 +5,10 @@ import fr.diginamic.hello.exceptions.RequeteIncorrecteException;
 import fr.diginamic.hello.exceptions.RessourceExistanteException;
 import fr.diginamic.hello.exceptions.RessourceNotFoundException;
 import fr.diginamic.hello.mappers.VilleMapper;
+import fr.diginamic.hello.models.Departement;
 import fr.diginamic.hello.models.Ville;
 import fr.diginamic.hello.services.VilleService;
+import fr.diginamic.hello.utils.CSVGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,6 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -33,9 +38,14 @@ public class VilleController {
     @Autowired
     private VilleService villeService;
 
+    /** Classe utilitaire permettant de mapper les propriétés des entités en fichier CSV */
+    @Autowired
+    private CSVGenerator csvGenerator;
+
     /**
-     * Méthode permettant de récupérer un ensemble d'objets Ville.
+     * Récupère une liste d'objets Ville.
      * @return liste de villes
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
      */
     @Operation(summary = "Récupération des villes")
     @ApiResponses(value = {
@@ -53,10 +63,11 @@ public class VilleController {
     }
 
     /**
-     * Méthode permettant de récupérer un ensemble d'objets Ville
-     * triés par nom avec une pagination.
+     * Récupère une liste d'objets Ville triés par nom avec une pagination.
      * @param n nombre d'éléments à afficher
      * @return liste de villes
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     * @throws RequeteIncorrecteException les paramètres de pagination donnés sont invalides
      */
     @Operation(summary = "Récupération des villes avec pagination")
     @ApiResponses(value = {
@@ -74,9 +85,11 @@ public class VilleController {
     }
 
     /**
-     * Méthode permettant de récupérer une ville à partir de son id.
+     * Récupère une ville à partir de son id.
      * @param id identifiant de la ville
      * @return une ville
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     * @throws RequeteIncorrecteException l'ID donné en paramètre est invalide
      */
     @Operation(summary = "Récupération d'une ville à partir de son ID")
     @ApiResponses(value = {
@@ -96,9 +109,11 @@ public class VilleController {
     }
 
     /**
-     * Méthode permettant de récupérer une ville à partir de son nom.
+     * Récupère une ville à partir de son nom.
      * @param nom nom de la ville
      * @return une ville
+     * @throws RequeteIncorrecteException le nom donné en paramètre a un format invalide
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée avec ce nom
      */
     @Operation(summary = "Récupération des villes dont le nom est celui donné en paramètre")
     @ApiResponses(value = {
@@ -118,10 +133,13 @@ public class VilleController {
     }
 
     /**
-     * Méthode permettant d'ajouter un objet Ville aux villes enregistrées.
+     * Ajoute une ville aux villes enregistrées.
      * @param villeDto objet DTO ville
      * @param result objet injecté par Spring Validation pour vérifier la validité des champs de ville
-     * @return une liste de villes et le statut HTTP de la requête accompagné d'un message
+     * @return une liste de villes
+     * @throws RessourceExistanteException la ville à ajouter existe déjà dans la base de données
+     * @throws RequeteIncorrecteException la ville modifiée passée en paramètre n'a pas un format valide
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
      */
     @Operation(summary = "Création et ajout d'une ville")
     @ApiResponses(value = {
@@ -137,7 +155,7 @@ public class VilleController {
                     description = "Erreur dans les paramètres donnés par le client")
     })
     @PostMapping
-    public ResponseEntity<List<VilleDto>> addVille(@Valid @RequestBody VilleDto villeDto, BindingResult result) throws RessourceExistanteException, RequeteIncorrecteException, RessourceNotFoundException {
+    public List<VilleDto> addVille(@Valid @RequestBody VilleDto villeDto, BindingResult result) throws RessourceExistanteException, RequeteIncorrecteException, RessourceNotFoundException {
         if (result.hasErrors()) {
             throw new RequeteIncorrecteException(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
         }
@@ -145,14 +163,17 @@ public class VilleController {
         villeService.insertVille(VilleMapper.toEntity(villeDto));
 
         List<Ville> villes = villeService.getVilles();
-        return ResponseEntity.ok(VilleMapper.toDtos(villes));
+        return VilleMapper.toDtos(villes);
     }
 
     /**
-     * Méthode permettant de modifier les informations d'une ville existante.
+     * Modifie les informations d'une ville existante.
      * @param id identifiant de la ville à modifier
      * @param villeDto objet DTO ville contenant les nouvelles informations
      * @return le statut HTTP de la requête accompagné d'un message
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée avec cet ID
+     * @throws RequeteIncorrecteException l'ID donné en paramètre ou les modifications apportées à la ville
+     * ne sont pas valides.
      */
     @Operation(summary = "Mise-à-jour des données d'une ville")
     @ApiResponses(value = {
@@ -176,9 +197,11 @@ public class VilleController {
     }
 
     /**
-     * Méthode permettant de supprimer une ville à partir de son identifiant.
+     * Supprime une ville à partir de son identifiant.
      * @param id identifiant de la ville
      * @return le statut HTTP de la requête accompagné d'un message
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée avec cet ID
+     * @throws RequeteIncorrecteException l'ID donné en paramètre est invalide
      */
     @Operation(summary = "Suppression d'une ville")
     @ApiResponses(value = {
@@ -198,9 +221,10 @@ public class VilleController {
     }
 
     /**
-     * Retourne les villes dont le nom commence par le préfixe donné.
+     * Récupère les villes dont le nom commence par le préfixe donné.
      * @param prefixe String
-     * @return liste de villes + statut de la requête HTTP
+     * @return liste de villes
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée avec ce préfixe
      */
     @Operation(summary = "Récupération des villes commençant par un préfixe donné")
     @ApiResponses(value = {
@@ -218,9 +242,10 @@ public class VilleController {
     }
 
     /**
-     * Retourne les villes dont le nombre d'habitants est supérieur à un minimum donné.
+     * Récupère les villes dont le nombre d'habitants est supérieur à un minimum donné.
      * @param min nombre minimum d'habitants
-     * @return liste de villes + statut de la requête HTTP
+     * @return liste de villes
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
      */
     @Operation(summary = "Récupération des villes ayant un nombre d'habitants supérieur à un seuil donné")
     @ApiResponses(value = {
@@ -238,10 +263,11 @@ public class VilleController {
     }
 
     /**
-     * Retourne les villes dont le nombre d'habitants est compris dans un intervalle donné.
+     * Récupère les villes dont le nombre d'habitants est compris dans un intervalle donné.
      * @param min nombre minimum d'habitantes
      * @param max nombre maximum d'habitants
-     * @return liste de villes + statut de la requête HTTP
+     * @return liste de villes
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
      */
     @Operation(summary = "Récupération des villes dont le nombre d'habitants est compris dans un intervalle donné")
     @ApiResponses(value = {
@@ -259,10 +285,11 @@ public class VilleController {
     }
 
     /**
-     * Retourne les villes d'un département dont le nombre d'habitants est supérieur à un certain seuil.
+     * Récupère les villes d'un département dont le nombre d'habitants est supérieur à un certain seuil.
      * @param codeDep code du département
      * @param min nombre minimum d'habitants
-     * @return liste de villes + statut de la requête HTTP
+     * @return liste de villes
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
      */
     @Operation(summary = "Récupération des villes d'un département dont le nombre d'habitants est supérieur à un seuil donné")
     @ApiResponses(value = {
@@ -280,12 +307,13 @@ public class VilleController {
     }
 
     /**
-     * Retourne les villes d'un département dont le nombre d'habitants
+     * Récupère les villes d'un département dont le nombre d'habitants
      * est compris dans un intervalle.
      * @param codeDep code du département
      * @param min nombre minimum d'habitants
      * @param max nombre maximum d'habitants
      * @return liste de villes + statut de la requête HTTP
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
      */
     @Operation(summary = "Récupération des villes d'un département dont le nombre d'habitants est compris dans un intervalle donné")
     @ApiResponses(value = {
@@ -303,10 +331,12 @@ public class VilleController {
     }
 
     /**
-     * Retourne les N plus grandes villes d'un département.
+     * Récupère les N plus grandes villes d'un département.
      * @param codeDep code département
      * @param n nombre d'éléments à afficher
      * @return liste de villes + statut de la requête HTTP
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     * @throws RequeteIncorrecteException les paramètres de pagination donnés ne sont pas valides
      */
     @Operation(summary = "Récupération des N plus grandes villes d'un département")
     @ApiResponses(value = {
@@ -321,5 +351,29 @@ public class VilleController {
     public List<VilleDto> getNVillesByDepartmentCodeOrderByNbInhabitantsDesc(@PathVariable String codeDep, @RequestParam Integer n) throws RessourceNotFoundException, RequeteIncorrecteException {
         List<Ville> villes = villeService.extractVillesByDepartementCodeOrderByNbHabDesc(codeDep, n);
         return VilleMapper.toDtos(villes);
+    }
+
+    /**
+     * Convertit les données des villes en fichier CSV.
+     * @return fichier CSV
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     */
+    @Operation(summary = "Conversion des villes en fichier CSV")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un fichier CSV contenant les villes (nom, nb habitants, code département, nom département"),
+            @ApiResponse(responseCode = "404",
+                    description = "Une ressource n'a pas été trouvée")
+    })
+    @GetMapping("/csv")
+    public ResponseEntity<String> generateCsvFile() throws RessourceNotFoundException {
+        List<Ville> villes = villeService.getVilles();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "villes.csv");
+
+        String csvBytes = csvGenerator.generateCSVVille(villes);
+        return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
     }
 }
