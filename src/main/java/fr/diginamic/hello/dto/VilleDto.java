@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 
 /**
- * Classe DTO utilisée pour sérialiser/désérialiser les données en entités JPA.
+ * Classe DTO utilisée pour sérialiser/désérialiser les données en entités JPA (Ville).
  */
 public class VilleDto implements Serializable {
     /** Identifiant de la ville */
