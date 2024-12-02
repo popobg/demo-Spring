@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
- * Classe DTO utilisée pour
+ * Classe DTO utilisée pour sérialiser/désérialiser les données en entités JPA (Departement).
  */
 public class DepartementDto implements Serializable {
     /** Identifiant du département */

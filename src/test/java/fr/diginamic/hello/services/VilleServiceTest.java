@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class VilleGetServiceTest {
+class VilleServiceTest {
     @Autowired
     private VilleService villeService;
 
@@ -96,7 +96,7 @@ class VilleGetServiceTest {
     @Test
     void testGetVilleByIdRequeteIncorrecteException() {
         Mockito.when(villeRepository.findById(13721L)).thenReturn(Optional.of(villes.getFirst()));
-        assertThrows(RequeteIncorrecteException.class, () -> villeService.getVilleById(null));
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.getVilleById(-1L));
     }
 
     @Test
@@ -120,12 +120,16 @@ class VilleGetServiceTest {
 
     @Test
     void testInsertVilleOk() throws RessourceNotFoundException, RequeteIncorrecteException, RessourceExistanteException {
+        // Nouvelle ville à ajouter
+        Ville nouvelleVille = new Ville("Barcelonnette", 2539);
+        nouvelleVille.setDepartement(departements.get(1));
+
         // Gère tous les appels aux repositories faits dans la méthode insertVille
-        Mockito.when(villeRepository.save(new Ville(13566, "Barcelonnette", 2539, departements.get(1)))).thenReturn(null);
+        Mockito.when(villeRepository.save(nouvelleVille)).thenReturn(null);
         Mockito.when(villeRepository.findByNom("Barcelonnette")).thenReturn(List.of());
         Mockito.when(departementRepository.findByCode("04")).thenReturn(Optional.ofNullable(departements.get(1)));
 
-        villeService.insertVille(new Ville(13566, "Barcelonnette", 2539, departements.get(1)));
+        villeService.insertVille(nouvelleVille);
     }
 
     @Test
@@ -136,31 +140,46 @@ class VilleGetServiceTest {
 
     @Test
     void testInsertVilleRessourceNotFoundException() {
+        Ville nouvelleVille = new Ville("Barcelonnette", 2539);
+        nouvelleVille.setDepartement(new Departement("Hérault", "34"));
+
         Mockito.when(departementRepository.findByCode("34")).thenReturn(Optional.empty());
-        assertThrows(RessourceNotFoundException.class, () -> villeService.insertVille(new Ville(13455, "Montpellier", 302454, new Departement(3, "Hérault", "34"))));
+        assertThrows(RessourceNotFoundException.class, () -> villeService.insertVille(nouvelleVille));
     }
 
     @Test
     void testInsertVilleRequeteIncorrecteException() {
+        Ville nouvelleVille = new Ville("Barcelonnette", 2539);
+        nouvelleVille.setDepartement(new Departement("Hérault", ""));
+
         Mockito.when(departementRepository.findByCode("")).thenReturn(Optional.empty());
-        assertThrows(RequeteIncorrecteException.class, () -> villeService.insertVille(new Ville(13455, "Montpellier", 302454, new Departement(3, "Hérault", ""))));
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.insertVille(nouvelleVille));
     }
 
     @Test
     void testUpdateVilleOk() throws RessourceNotFoundException, RequeteIncorrecteException {
+        Ville ville = new Ville( "Oyonnax", 23000);
+        ville.setDepartement(departements.getFirst());
+
         Mockito.when(villeRepository.findById(13721L)).thenReturn(Optional.of(villes.get(1)));
-        villeService.updateVille(13721L, new Ville(13721L, "Oyonnax", 23000, departements.getFirst()));
+        villeService.updateVille(13721L, ville);
     }
 
     @Test
     void testUpdateVilleRessourceNotFoundException() {
+        Ville ville = new Ville( "Oyonnax", 23000);
+        ville.setDepartement(departements.getFirst());
+
         Mockito.when(villeRepository.findById(3L)).thenReturn(Optional.empty());
-        assertThrows(RessourceNotFoundException.class, () -> villeService.updateVille(3L, new Ville(13721L, "Oyonnax", 23000, departements.getFirst())));
+        assertThrows(RessourceNotFoundException.class, () -> villeService.updateVille(3L, ville));
     }
 
     @Test
     void testUpdateVilleRequeteIncorrecteException() {
-        assertThrows(RequeteIncorrecteException.class, () -> villeService.updateVille(null, new Ville(13721L, "Oyonnax", 23000, departements.getFirst())));
+        Ville ville = new Ville( "Oyonnax", 23000);
+        ville.setDepartement(departements.getFirst());
+
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.updateVille(null, ville));
     }
 
     @Test
@@ -172,16 +191,16 @@ class VilleGetServiceTest {
     @Test
     void testDeleteVilleRessourceNotFoundException() {
         Mockito.when(villeRepository.findById(3L)).thenReturn(Optional.empty());
-        assertThrows(RessourceNotFoundException.class, () -> villeService.updateVille(3L, new Ville(13721L, "Oyonnax", 23000, departements.getFirst())));
+        assertThrows(RessourceNotFoundException.class, () -> villeService.deleteVille(3L));
     }
 
     @Test
     void testDeleteVilleRequeteIncorrecteException() {
-        assertThrows(RequeteIncorrecteException.class, () -> villeService.deleteVille(null));
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.deleteVille(-3L));
     }
 
     @Test
-    void testExtractVillesByNomStartingWithOk() throws RessourceNotFoundException {
+    void testExtractVillesByNomStartingWithOk() throws RessourceNotFoundException, RequeteIncorrecteException {
         Mockito.when(villeRepository.findByNomStartingWith("Oy")).thenReturn(List.of(villes.get(1)));
         assertEquals(List.of(villes.get(1)), villeService.extractVillesByNomStartingWith("Oy"));
     }
@@ -193,7 +212,12 @@ class VilleGetServiceTest {
     }
 
     @Test
-    void testExtractVillesByNbHabGreaterThanOk() throws RessourceNotFoundException {
+    void testExtractVillesByNomStartingWithRequeteIncorrecteException() {
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByNomStartingWith(""));
+    }
+
+    @Test
+    void testExtractVillesByNbHabGreaterThanOk() throws RessourceNotFoundException, RequeteIncorrecteException {
         Mockito.when(villeRepository.findByNbHabitantsGreaterThan(30000)).thenReturn(List.of(villes.getFirst()));
         assertEquals(List.of(villes.getFirst()), villeService.extractVillesByNbHabGreaterThan(30000));
     }
@@ -202,6 +226,11 @@ class VilleGetServiceTest {
     void testExtractVillesByNbHabGreaterThanRessourceNotFoundException() {
         Mockito.when(villeRepository.findByNbHabitantsGreaterThan(50000)).thenReturn(List.of());
         assertThrows(RessourceNotFoundException.class, () -> villeService.extractVillesByNbHabGreaterThan(50000));
+    }
+
+    @Test
+    void testExtractVillesByNbHabGreaterThanRequeteIncorrecteException() {
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByNbHabGreaterThan(-2000));
     }
 
     @Test
@@ -217,12 +246,17 @@ class VilleGetServiceTest {
     }
 
     @Test
-    void testExtractVillesByDepartementCodeOrderByNbHabDescRequeteIncorrecteException() {
+    void testExtractVillesByDepartementCodeOrderByNbHabDescRequeteIncorrecteNException() {
         assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByDepartementCodeOrderByNbHabDesc("06", -1));
     }
 
     @Test
-    void testExtractVillesByNbHabBetweenOk() throws RessourceNotFoundException {
+    void testExtractVillesByDepartementCodeOrderByNbHabDescRequeteIncorrecteCodeException() {
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByDepartementCodeOrderByNbHabDesc("", -1));
+    }
+
+    @Test
+    void testExtractVillesByNbHabBetweenOk() throws RessourceNotFoundException, RequeteIncorrecteException {
         Mockito.when(villeRepository.findByNbHabitantsBetween(15000, 20000)).thenReturn(List.of(villes.get(3)));
         assertEquals(List.of(villes.get(3)), villeService.extractVillesByNbHabBetween(15000, 20000));
     }
@@ -234,19 +268,39 @@ class VilleGetServiceTest {
     }
 
     @Test
-    void testExtractVillesByDepartementCodeAndNbHabitantsGreaterThanOK() throws RessourceNotFoundException {
+    void testExtractVillesByNbHabBetweenRequeteIncorrecteMinSupMaxException() {
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByNbHabBetween(100000, 2));
+    }
+
+    @Test
+    void testExtractVillesByNbHabBetweenRequeteIncorrecteMinNegException() {
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByNbHabBetween(-32, -3));
+    }
+
+    @Test
+    void testExtractVillesByDepartementCodeAndNbHabitantsGreaterThanOK() throws RessourceNotFoundException, RequeteIncorrecteException {
         Mockito.when(villeRepository.findByDepartementCodeAndNbHabitantsGreaterThan("04", 20000)).thenReturn(List.of(villes.get(2)));
-        assertEquals(List.of(villes.get(2)), villeService.extractVillesByDepartementCodeAndNbHabitantsGreaterThan("04", 20000));
+        assertEquals(List.of(villes.get(2)), villeService.extractVillesByDepartementCodeAndNbHabGreaterThan("04", 20000));
     }
 
     @Test
-    void testExtractVillesByDepartementCodeAndNbHabitantsGreaterThaRessourceNotFoundException() {
+    void testExtractVillesByDepartementCodeAndNbHabitantsGreaterThanRessourceNotFoundException() {
         Mockito.when(villeRepository.findByDepartementCodeAndNbHabitantsGreaterThan("04", 50000)).thenReturn(List.of());
-        assertThrows(RessourceNotFoundException.class, () -> villeService.extractVillesByDepartementCodeAndNbHabitantsGreaterThan("04", 20000));
+        assertThrows(RessourceNotFoundException.class, () -> villeService.extractVillesByDepartementCodeAndNbHabGreaterThan("04", 20000));
     }
 
     @Test
-    void testExtractVillesByDepartementCodeAndNbHabBetweenOk() throws RessourceNotFoundException {
+    void testExtractVillesByDepartementCodeAndNbHabitantsGreaterThanRequeteIncorrecteMinHabException() {
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByDepartementCodeAndNbHabGreaterThan("04", -47));
+    }
+
+    @Test
+    void testExtractVillesByDepartementCodeAndNbHabitantsGreaterThanRequeteIncorrecteCodeNullException() {
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByDepartementCodeAndNbHabGreaterThan(null, 20000));
+    }
+
+    @Test
+    void testExtractVillesByDepartementCodeAndNbHabBetweenOk() throws RessourceNotFoundException, RequeteIncorrecteException {
         Mockito.when(villeRepository.findByDepartementCodeAndNbHabitantsBetween("04", 20000, 30000)).thenReturn(List.of(villes.get(2)));
         assertEquals(List.of(villes.get(2)), villeService.extractVillesByDepartementCodeAndNbHabBetween("04", 20000, 30000));
     }
@@ -255,5 +309,15 @@ class VilleGetServiceTest {
     void testExtractVillesByDepartementCodeAndNbHabBetweenRessourceNotFoundException() {
         Mockito.when(villeRepository.findByDepartementCodeAndNbHabitantsBetween("04", 2000000, 3000000)).thenReturn(List.of());
         assertThrows(RessourceNotFoundException.class, () -> villeService.extractVillesByDepartementCodeAndNbHabBetween("04", 2000000, 3000000));
+    }
+
+    @Test
+    void testExtractVillesByDepartementCodeAndNbHabBetweenRequeteIncorrecteMinSupMaxException() {
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByDepartementCodeAndNbHabBetween("04", 10000, 2));
+    }
+
+    @Test
+    void testExtractVillesByDepartementCodeAndNbHabBetweenRequeteIncorrecteCodeException() {
+        assertThrows(RequeteIncorrecteException.class, () -> villeService.extractVillesByDepartementCodeAndNbHabBetween("", 100, 20000));
     }
 }

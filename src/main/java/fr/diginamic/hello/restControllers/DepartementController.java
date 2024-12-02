@@ -81,7 +81,7 @@ public class DepartementController {
                     description = "Erreur dans les paramètres donnés par le client")
     })
     @GetMapping("/liste/pagination")
-    public List<DepartementDto> getDepartementsPagination(@RequestParam int n) throws RequeteIncorrecteException, RessourceNotFoundException {
+    public List<DepartementDto> getDepartementsPagination(@RequestParam int n) throws RessourceNotFoundException, RequeteIncorrecteException {
         List<Departement> departements = deptService.getDepartementsPagination(n);
         return DepartementMapper.toDtos(departements);
     }
@@ -142,8 +142,8 @@ public class DepartementController {
      * @param result objet injecté par Spring Validation pour vérifier la validité des champs de VilleDTO
      * @return une liste de départements et le statut HTTP de la requête accompagné d'un message
      * @throws RessourceNotFoundException s'il n'y a pas de départements à renvoyer
-     * @throws RessourceExistanteException le département à ajouter existe déjà dans la base de données
      * @throws RequeteIncorrecteException les informations données en paramètre sont invalides
+     * @throws RessourceExistanteException le département à ajouter existe déjà dans la base de données
      */
     @Operation(summary = "Création et ajout d'un département")
     @ApiResponses(value = {
@@ -153,13 +153,13 @@ public class DepartementController {
                             schema = @Schema(implementation = DepartementDto.class))}),
             @ApiResponse(responseCode = "404",
                     description = "Aucun département n'a été trouvé"),
-            @ApiResponse(responseCode = "409",
-                    description = "Une ressource identique existe déjà"),
             @ApiResponse(responseCode = "400",
-                    description = "Erreur dans les paramètres donnés par le client")
+                    description = "Erreur dans les paramètres donnés par le client"),
+            @ApiResponse(responseCode = "409",
+                    description = "Une ressource identique existe déjà")
     })
     @PostMapping
-    public ResponseEntity<List<DepartementDto>> addDepartement(@Valid @RequestBody DepartementDto dept, BindingResult result) throws RessourceNotFoundException, RessourceExistanteException, RequeteIncorrecteException {
+    public ResponseEntity<List<DepartementDto>> addDepartement(@Valid @RequestBody DepartementDto dept, BindingResult result) throws RessourceNotFoundException, RequeteIncorrecteException, RessourceExistanteException {
         if (result.hasErrors()) {
             throw new RequeteIncorrecteException(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
         }

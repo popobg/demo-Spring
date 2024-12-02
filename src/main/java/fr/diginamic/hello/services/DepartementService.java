@@ -51,7 +51,7 @@ public class DepartementService {
      * @throws RessourceNotFoundException aucun département à retourner
      * @throws RequeteIncorrecteException les paramètres reçus en requête sont invalides
      */
-    public List<Departement> getDepartementsPagination(int n) throws RequeteIncorrecteException, RessourceNotFoundException {
+    public List<Departement> getDepartementsPagination(int n) throws RessourceNotFoundException, RequeteIncorrecteException {
         if (n <= 0) {
             throw new RequeteIncorrecteException("Le nombre d'éléments demandé doit être supérieur à 0.");
         }
@@ -74,7 +74,7 @@ public class DepartementService {
      * @throws RequeteIncorrecteException les paramètres reçus en requête sont invalides
      */
     public Departement getDepartementById(Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
-        if (id == null) {
+        if (id == null || id < 0) {
             throw new RequeteIncorrecteException("Il faut renseigner un id.");
         }
 
@@ -133,7 +133,7 @@ public class DepartementService {
      * @throws RequeteIncorrecteException les paramètres reçus en requête sont invalides
      */
     public void updateDepartement(Long id, Departement dept) throws RessourceNotFoundException, RequeteIncorrecteException {
-        if (id == null) {
+        if (id == null || id < 0) {
             throw new RequeteIncorrecteException("Il faut renseigner un id.");
         }
 
@@ -158,7 +158,7 @@ public class DepartementService {
      * @throws RequeteIncorrecteException les paramètres reçus en requête sont invalides
      */
     public void deleteDepartement(Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
-        if (id == null) {
+        if (id == null || id < 0) {
             throw new RequeteIncorrecteException("Il faut renseigner un id.");
         }
 
@@ -168,10 +168,14 @@ public class DepartementService {
             throw new RessourceNotFoundException(String.format("Aucun département dont l'Id est %d n'a été trouvé.", id));
         }
 
+        Departement departement = optDept.get();
+
         // Gère la relation one-to-many : si on supprime le département,
         // les villes liées sont supprimées aussi
-        for (Ville ville : optDept.get().getVilles()) {
-            villeRepo.deleteById(ville.getId());
+        if (departement.getVilles() != null) {
+            for (Ville ville : departement.getVilles()) {
+                villeRepo.deleteById(ville.getId());
+            }
         }
 
         departementRepo.deleteById(id);

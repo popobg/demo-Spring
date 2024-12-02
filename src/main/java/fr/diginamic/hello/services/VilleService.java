@@ -9,14 +9,10 @@ import fr.diginamic.hello.repositories.VilleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Classe service de traitement des requêtes du controller au repository des villes
@@ -70,7 +66,7 @@ public class VilleService {
      * @return ville
      */
     public Ville getVilleById(Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
-        if (id == null) {
+        if (id == null || id < 0) {
             throw new RequeteIncorrecteException("Il faut renseigner un id.");
         }
 
@@ -88,7 +84,7 @@ public class VilleService {
      * Méthode permettant de demander une ville au repository à partir de son nom.
      * @return ville
      */
-    public List<Ville> getVillesByNom(String nom) throws RequeteIncorrecteException, RessourceNotFoundException {
+    public List<Ville> getVillesByNom(String nom) throws RessourceNotFoundException, RequeteIncorrecteException {
         if (nom == null || nom.isEmpty()) {
             throw new RequeteIncorrecteException("Il faut indiquer un nom.");
         }
@@ -106,7 +102,7 @@ public class VilleService {
      * Méthode permettant de donner une ville au repository à ajouter en base de données.
      * @param ville ville à ajouter
      */
-    public void insertVille(Ville ville) throws RessourceExistanteException, RequeteIncorrecteException, RessourceNotFoundException {
+    public void insertVille(Ville ville) throws RessourceNotFoundException, RequeteIncorrecteException, RessourceExistanteException {
         List<Ville> villesHomonymes = villeRepo.findByNom(ville.getNom());
 
         // check si une ville identique existe déjà
@@ -132,7 +128,7 @@ public class VilleService {
      * @param ville objet ville contenant les nouvelles informations
      */
     public void updateVille(Long id, Ville ville) throws RessourceNotFoundException, RequeteIncorrecteException {
-        if (id == null) {
+        if (id == null || id < 0) {
             throw new RequeteIncorrecteException("Il faut renseigner un id.");
         }
 
@@ -160,7 +156,7 @@ public class VilleService {
      * @param id identifiant de la ville à supprimer
      */
     public void deleteVille(Long id) throws RessourceNotFoundException, RequeteIncorrecteException {
-        if (id == null) {
+        if (id == null || id < 0) {
             throw new RequeteIncorrecteException("Il faut renseigner un id.");
         }
 
@@ -178,7 +174,11 @@ public class VilleService {
      * @param prefixe String
      * @return liste de villes
      */
-    public List<Ville> extractVillesByNomStartingWith(String prefixe) throws RessourceNotFoundException {
+    public List<Ville> extractVillesByNomStartingWith(String prefixe) throws RessourceNotFoundException, RequeteIncorrecteException {
+        if (prefixe == null || prefixe.isEmpty()) {
+            throw new RequeteIncorrecteException("Le préfixe doit comporter au moins un caractères.");
+        }
+
         List<Ville> villes = villeRepo.findByNomStartingWith(prefixe);
 
         if (villes.isEmpty()) {
@@ -194,7 +194,11 @@ public class VilleService {
      * @param min nombre minimum d'habitants
      * @return liste de villes
      */
-    public List<Ville> extractVillesByNbHabGreaterThan(int min) throws RessourceNotFoundException {
+    public List<Ville> extractVillesByNbHabGreaterThan(int min) throws RessourceNotFoundException, RequeteIncorrecteException {
+        if (min <= 0) {
+            throw new RequeteIncorrecteException("Le nombre minimum d'habitants doit au moins être 1.");
+        }
+
         List<Ville> villes = villeRepo.findByNbHabitantsGreaterThan(min);
 
         if (villes.isEmpty()) {
@@ -214,6 +218,9 @@ public class VilleService {
         if (n <= 0) {
             throw new RequeteIncorrecteException("Le nombre d'éléments demandé doit être supérieur à 0.");
         }
+        else if (codeDep == null || codeDep.isEmpty()) {
+            throw new RequeteIncorrecteException("Le code du département doit être renseigné.");
+        }
 
         Pageable pagination = PageRequest.of(0, n);
         List<Ville> villes = villeRepo.findByDepartementCodeOrderByNbHabitantsDesc(codeDep, pagination);
@@ -232,7 +239,14 @@ public class VilleService {
      * @param max nombre maximum d'habitants
      * @return liste de villes
      */
-    public List<Ville> extractVillesByNbHabBetween(int min, int max) throws RessourceNotFoundException {
+    public List<Ville> extractVillesByNbHabBetween(int min, int max) throws RessourceNotFoundException, RequeteIncorrecteException {
+        if (min >= max) {
+            throw new RequeteIncorrecteException("Le minimum d'habitants doit être strictement inférieur au maximum d'habitants.");
+        }
+        else if (min <= 0) {
+            throw new RequeteIncorrecteException("Le nombre minimum et maximum d'habitants doivent être supérieur à 0.");
+        }
+
         List<Ville> villes = villeRepo.findByNbHabitantsBetween(min, max);
 
         if (villes.isEmpty()) {
@@ -249,7 +263,14 @@ public class VilleService {
      * @param min nombre minimum d'habitants
      * @return liste des villes
      */
-    public List<Ville> extractVillesByDepartementCodeAndNbHabitantsGreaterThan(String codeDep, int min) throws RessourceNotFoundException {
+    public List<Ville> extractVillesByDepartementCodeAndNbHabGreaterThan(String codeDep, int min) throws RessourceNotFoundException, RequeteIncorrecteException {
+        if (min <= 0) {
+            throw new RequeteIncorrecteException("Le nombre minimum d'habitants doit être supérieur à 0.");
+        }
+        else if (codeDep == null || codeDep.isEmpty()) {
+            throw new RequeteIncorrecteException("Le code du département doit être renseigné.");
+        }
+
         List<Ville> villes = villeRepo.findByDepartementCodeAndNbHabitantsGreaterThan(codeDep, min);
 
         if (villes.isEmpty()) {
@@ -267,8 +288,16 @@ public class VilleService {
      * @param max nombre maximum d'habitants
      * @return liste de villes
      */
-    public List<Ville> extractVillesByDepartementCodeAndNbHabBetween(String codeDep, int min, int max) throws RessourceNotFoundException {
-//         Ecrire un test qui vérifie que min < max (pareil pour tous les endroits avec min-max)
+    public List<Ville> extractVillesByDepartementCodeAndNbHabBetween(String codeDep, int min, int max) throws RessourceNotFoundException, RequeteIncorrecteException {
+        if (min >= max) {
+            throw new RequeteIncorrecteException("Le minimum d'habitants doit être strictement inférieur au maximum d'habitants.");
+        }
+        else if (min <= 0) {
+            throw new RequeteIncorrecteException("Le nombre minimum d'habitants doit être supérieur à 0.");
+        }
+        else if (codeDep == null || codeDep.isEmpty()) {
+            throw new RequeteIncorrecteException("Le code du département doit être renseigné.");
+        }
 
         List<Ville> villes = villeRepo.findByDepartementCodeAndNbHabitantsBetween(codeDep, min, max);
 

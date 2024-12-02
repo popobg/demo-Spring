@@ -5,7 +5,6 @@ import fr.diginamic.hello.exceptions.RequeteIncorrecteException;
 import fr.diginamic.hello.exceptions.RessourceExistanteException;
 import fr.diginamic.hello.exceptions.RessourceNotFoundException;
 import fr.diginamic.hello.mappers.VilleMapper;
-import fr.diginamic.hello.models.Departement;
 import fr.diginamic.hello.models.Ville;
 import fr.diginamic.hello.services.VilleService;
 import fr.diginamic.hello.utils.CSVGenerator;
@@ -79,7 +78,7 @@ public class VilleController {
                     description = "Une ressource n'a pas été trouvée")
     })
     @GetMapping("/liste/pagination")
-    public List<VilleDto> getVilles(@RequestParam int n) throws RessourceNotFoundException, RequeteIncorrecteException {
+    public List<VilleDto> getVillesPagination(@RequestParam int n) throws RessourceNotFoundException, RequeteIncorrecteException {
         List<Ville> villes = villeService.getVillesPagination(n);
         return VilleMapper.toDtos(villes);
     }
@@ -112,8 +111,8 @@ public class VilleController {
      * Récupère une ville à partir de son nom.
      * @param nom nom de la ville
      * @return une ville
-     * @throws RequeteIncorrecteException le nom donné en paramètre a un format invalide
      * @throws RessourceNotFoundException aucune ville n'a pu être trouvée avec ce nom
+     * @throws RequeteIncorrecteException le nom donné en paramètre a un format invalide
      */
     @Operation(summary = "Récupération des villes dont le nom est celui donné en paramètre")
     @ApiResponses(value = {
@@ -127,7 +126,7 @@ public class VilleController {
                     description = "Erreur dans les paramètres donnés par le client")
     })
     @GetMapping("/nom/{nom}")
-    public List<VilleDto> getVillesByNom(@PathVariable String nom) throws RequeteIncorrecteException, RessourceNotFoundException {
+    public List<VilleDto> getVillesByNom(@PathVariable String nom) throws RessourceNotFoundException, RequeteIncorrecteException {
         List<Ville> villes = villeService.getVillesByNom(nom);
         return VilleMapper.toDtos(villes);
     }
@@ -137,9 +136,9 @@ public class VilleController {
      * @param villeDto objet DTO ville
      * @param result objet injecté par Spring Validation pour vérifier la validité des champs de ville
      * @return une liste de villes
-     * @throws RessourceExistanteException la ville à ajouter existe déjà dans la base de données
-     * @throws RequeteIncorrecteException la ville modifiée passée en paramètre n'a pas un format valide
      * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     * @throws RequeteIncorrecteException la ville modifiée passée en paramètre n'a pas un format valide
+     * @throws RessourceExistanteException la ville à ajouter existe déjà dans la base de données
      */
     @Operation(summary = "Création et ajout d'une ville")
     @ApiResponses(value = {
@@ -155,7 +154,7 @@ public class VilleController {
                     description = "Erreur dans les paramètres donnés par le client")
     })
     @PostMapping
-    public List<VilleDto> addVille(@Valid @RequestBody VilleDto villeDto, BindingResult result) throws RessourceExistanteException, RequeteIncorrecteException, RessourceNotFoundException {
+    public List<VilleDto> addVille(@Valid @RequestBody VilleDto villeDto, BindingResult result) throws RessourceNotFoundException, RequeteIncorrecteException, RessourceExistanteException {
         if (result.hasErrors()) {
             throw new RequeteIncorrecteException(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
         }
@@ -236,7 +235,7 @@ public class VilleController {
                     description = "Une ressource n'a pas été trouvée")
     })
     @GetMapping("/prefixe_nom")
-    public List<VilleDto> getVillesByNomStartingWith(@RequestParam String prefixe) throws RessourceNotFoundException {
+    public List<VilleDto> getVillesByNomStartingWith(@RequestParam String prefixe) throws RessourceNotFoundException, RequeteIncorrecteException {
         List<Ville> villes = villeService.extractVillesByNomStartingWith(prefixe);
         return VilleMapper.toDtos(villes);
     }
@@ -257,7 +256,7 @@ public class VilleController {
                     description = "Une ressource n'a pas été trouvée")
     })
     @GetMapping("/nb_habitants/{min}")
-    public List<VilleDto> getVillesByNbHabGreaterThan(@PathVariable int min) throws RessourceNotFoundException {
+    public List<VilleDto> getVillesByNbHabGreaterThan(@PathVariable int min) throws RessourceNotFoundException, RequeteIncorrecteException {
         List<Ville> villes = villeService.extractVillesByNbHabGreaterThan(min);
         return VilleMapper.toDtos(villes);
     }
@@ -279,14 +278,14 @@ public class VilleController {
                     description = "Une ressource n'a pas été trouvée")
     })
     @GetMapping("/nb_habitants")
-    public List<VilleDto> getVillesByNbHabBetween(@RequestParam int min, @RequestParam int max) throws RessourceNotFoundException {
+    public List<VilleDto> getVillesByNbHabBetween(@RequestParam int min, @RequestParam int max) throws RessourceNotFoundException, RequeteIncorrecteException {
         List<Ville> villes = villeService.extractVillesByNbHabBetween(min, max);
         return VilleMapper.toDtos(villes);
     }
 
     /**
      * Récupère les villes d'un département dont le nombre d'habitants est supérieur à un certain seuil.
-     * @param codeDep code du département
+     * @param code_dept code du département
      * @param min nombre minimum d'habitants
      * @return liste de villes
      * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
@@ -300,16 +299,16 @@ public class VilleController {
             @ApiResponse(responseCode = "404",
                     description = "Une ressource n'a pas été trouvée")
     })
-    @GetMapping("/DeptAndNbHab/{codeDep}/{min}")
-    public List<VilleDto> getVillesByDepartementAndNbHabGreaterThan(@PathVariable String codeDep, @PathVariable int min) throws RessourceNotFoundException {
-        List<Ville> villes = villeService.extractVillesByDepartementCodeAndNbHabitantsGreaterThan(codeDep, min);
+    @GetMapping("/dept_nb_hab/{code_dept}/{min}")
+    public List<VilleDto> getVillesByDepartementAndNbHabGreaterThan(@PathVariable String code_dept, @PathVariable int min) throws RessourceNotFoundException, RequeteIncorrecteException {
+        List<Ville> villes = villeService.extractVillesByDepartementCodeAndNbHabGreaterThan(code_dept, min);
         return VilleMapper.toDtos(villes);
     }
 
     /**
      * Récupère les villes d'un département dont le nombre d'habitants
      * est compris dans un intervalle.
-     * @param codeDep code du département
+     * @param code_dept code du département
      * @param min nombre minimum d'habitants
      * @param max nombre maximum d'habitants
      * @return liste de villes + statut de la requête HTTP
@@ -324,15 +323,15 @@ public class VilleController {
             @ApiResponse(responseCode = "404",
                     description = "Une ressource n'a pas été trouvée")
     })
-    @GetMapping("/DeptAndNbHab/{codeDep}/{min}/{max}")
-    public List<VilleDto> getVillesByDepartmentCodeAndNbInhabitantsBetween(@PathVariable String codeDep, @PathVariable Integer min, @PathVariable Integer max) throws RessourceNotFoundException {
-        List<Ville> villes = villeService.extractVillesByDepartementCodeAndNbHabBetween(codeDep, min,max);
+    @GetMapping("/dept_nb_hab/{code_dept}/{min}/{max}")
+    public List<VilleDto> getVillesByDepartmentCodeAndNbInhabitantsBetween(@PathVariable String code_dept, @PathVariable Integer min, @PathVariable Integer max) throws RessourceNotFoundException, RequeteIncorrecteException {
+        List<Ville> villes = villeService.extractVillesByDepartementCodeAndNbHabBetween(code_dept, min,max);
         return VilleMapper.toDtos(villes);
     }
 
     /**
      * Récupère les N plus grandes villes d'un département.
-     * @param codeDep code département
+     * @param code_dept code département
      * @param n nombre d'éléments à afficher
      * @return liste de villes + statut de la requête HTTP
      * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
@@ -347,9 +346,9 @@ public class VilleController {
             @ApiResponse(responseCode = "404",
                     description = "Une ressource n'a pas été trouvée")
     })
-    @GetMapping("/DeptOrderNbHab/{codeDep}")
-    public List<VilleDto> getNVillesByDepartmentCodeOrderByNbInhabitantsDesc(@PathVariable String codeDep, @RequestParam Integer n) throws RessourceNotFoundException, RequeteIncorrecteException {
-        List<Ville> villes = villeService.extractVillesByDepartementCodeOrderByNbHabDesc(codeDep, n);
+    @GetMapping("/dept_order_nb_hab/{code_dept}")
+    public List<VilleDto> getNVillesByDepartmentCodeOrderByNbInhabitantsDesc(@PathVariable String code_dept, @RequestParam Integer n) throws RessourceNotFoundException, RequeteIncorrecteException {
+        List<Ville> villes = villeService.extractVillesByDepartementCodeOrderByNbHabDesc(code_dept, n);
         return VilleMapper.toDtos(villes);
     }
 
