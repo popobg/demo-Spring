@@ -8,8 +8,8 @@ import java.util.List;
 
 @Component
 public class CSVGenerator {
-    private static final String CSV_HEADER_VILLE = "nom ville, nombre d'habitants, code département, nom du département";
-    private static final String CSV_HEADER_DEPT = "code département, nom du département";
+    private static final String CSV_HEADER_VILLE = "nom ville, nombre d'habitants, code département, nom du département\n";
+    private static final String CSV_HEADER_DEPT = "code département, nom du département\n";
 
     public String generateCSVVille(List<Ville> villes) {
         StringBuilder csvContent = new StringBuilder();

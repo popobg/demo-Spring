@@ -1,18 +1,22 @@
 package fr.diginamic.hello.restControllers;
 
+import com.itextpdf.text.*;
 import fr.diginamic.hello.dto.VilleDto;
 import fr.diginamic.hello.exceptions.RequeteIncorrecteException;
 import fr.diginamic.hello.exceptions.RessourceExistanteException;
 import fr.diginamic.hello.exceptions.RessourceNotFoundException;
 import fr.diginamic.hello.mappers.VilleMapper;
 import fr.diginamic.hello.models.Ville;
+import fr.diginamic.hello.services.DepartementService;
 import fr.diginamic.hello.services.VilleService;
 import fr.diginamic.hello.utils.CSVGenerator;
+import fr.diginamic.hello.utils.PDFGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +27,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,6 +45,10 @@ public class VilleController {
     /** Classe utilitaire permettant de mapper les propriétés des entités en fichier CSV */
     @Autowired
     private CSVGenerator csvGenerator;
+
+    /** Service de gestion des départements */
+    @Autowired
+    private DepartementService departementService;
 
     /**
      * Récupère une liste d'objets Ville.
@@ -75,7 +84,9 @@ public class VilleController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = VilleDto.class))}),
             @ApiResponse(responseCode = "404",
-                    description = "Une ressource n'a pas été trouvée")
+                    description = "Une ressource n'a pas été trouvée"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
     })
     @GetMapping("/liste/pagination")
     public List<VilleDto> getVillesPagination(@RequestParam int n) throws RessourceNotFoundException, RequeteIncorrecteException {
@@ -224,6 +235,7 @@ public class VilleController {
      * @param prefixe String
      * @return liste de villes
      * @throws RessourceNotFoundException aucune ville n'a pu être trouvée avec ce préfixe
+     * @throws RequeteIncorrecteException préfixe donné en paramètre incorrect
      */
     @Operation(summary = "Récupération des villes commençant par un préfixe donné")
     @ApiResponses(value = {
@@ -232,7 +244,9 @@ public class VilleController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = VilleDto.class))}),
             @ApiResponse(responseCode = "404",
-                    description = "Une ressource n'a pas été trouvée")
+                    description = "Une ressource n'a pas été trouvée"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
     })
     @GetMapping("/prefixe_nom")
     public List<VilleDto> getVillesByNomStartingWith(@RequestParam String prefixe) throws RessourceNotFoundException, RequeteIncorrecteException {
@@ -245,6 +259,7 @@ public class VilleController {
      * @param min nombre minimum d'habitants
      * @return liste de villes
      * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     * @throws RequeteIncorrecteException nombre minimum d'habitants donné en paramètre incorrect
      */
     @Operation(summary = "Récupération des villes ayant un nombre d'habitants supérieur à un seuil donné")
     @ApiResponses(value = {
@@ -253,7 +268,9 @@ public class VilleController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = VilleDto.class))}),
             @ApiResponse(responseCode = "404",
-                    description = "Une ressource n'a pas été trouvée")
+                    description = "Une ressource n'a pas été trouvée"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
     })
     @GetMapping("/nb_habitants/{min}")
     public List<VilleDto> getVillesByNbHabGreaterThan(@PathVariable int min) throws RessourceNotFoundException, RequeteIncorrecteException {
@@ -267,6 +284,7 @@ public class VilleController {
      * @param max nombre maximum d'habitants
      * @return liste de villes
      * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     * @throws RequeteIncorrecteException min et/ou max donnés en paramètre incorrects
      */
     @Operation(summary = "Récupération des villes dont le nombre d'habitants est compris dans un intervalle donné")
     @ApiResponses(value = {
@@ -275,7 +293,9 @@ public class VilleController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = VilleDto.class))}),
             @ApiResponse(responseCode = "404",
-                    description = "Une ressource n'a pas été trouvée")
+                    description = "Une ressource n'a pas été trouvée"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
     })
     @GetMapping("/nb_habitants")
     public List<VilleDto> getVillesByNbHabBetween(@RequestParam int min, @RequestParam int max) throws RessourceNotFoundException, RequeteIncorrecteException {
@@ -289,6 +309,7 @@ public class VilleController {
      * @param min nombre minimum d'habitants
      * @return liste de villes
      * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     * @throws RequeteIncorrecteException min donné en paramètre incorrect
      */
     @Operation(summary = "Récupération des villes d'un département dont le nombre d'habitants est supérieur à un seuil donné")
     @ApiResponses(value = {
@@ -297,7 +318,9 @@ public class VilleController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = VilleDto.class))}),
             @ApiResponse(responseCode = "404",
-                    description = "Une ressource n'a pas été trouvée")
+                    description = "Une ressource n'a pas été trouvée"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
     })
     @GetMapping("/dept_nb_hab/{code_dept}/{min}")
     public List<VilleDto> getVillesByDepartementAndNbHabGreaterThan(@PathVariable String code_dept, @PathVariable int min) throws RessourceNotFoundException, RequeteIncorrecteException {
@@ -313,6 +336,7 @@ public class VilleController {
      * @param max nombre maximum d'habitants
      * @return liste de villes + statut de la requête HTTP
      * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     * @throws RequeteIncorrecteException min et/ou max donnés en paramètre incorrects
      */
     @Operation(summary = "Récupération des villes d'un département dont le nombre d'habitants est compris dans un intervalle donné")
     @ApiResponses(value = {
@@ -321,10 +345,12 @@ public class VilleController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = VilleDto.class))}),
             @ApiResponse(responseCode = "404",
-                    description = "Une ressource n'a pas été trouvée")
+                    description = "Une ressource n'a pas été trouvée"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
     })
     @GetMapping("/dept_nb_hab/{code_dept}/{min}/{max}")
-    public List<VilleDto> getVillesByDepartmentCodeAndNbInhabitantsBetween(@PathVariable String code_dept, @PathVariable Integer min, @PathVariable Integer max) throws RessourceNotFoundException, RequeteIncorrecteException {
+    public List<VilleDto> getVillesByDepartmentCodeAndNbHabBetween(@PathVariable String code_dept, @PathVariable Integer min, @PathVariable Integer max) throws RessourceNotFoundException, RequeteIncorrecteException {
         List<Ville> villes = villeService.extractVillesByDepartementCodeAndNbHabBetween(code_dept, min,max);
         return VilleMapper.toDtos(villes);
     }
@@ -344,10 +370,12 @@ public class VilleController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = VilleDto.class))}),
             @ApiResponse(responseCode = "404",
-                    description = "Une ressource n'a pas été trouvée")
+                    description = "Une ressource n'a pas été trouvée"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
     })
     @GetMapping("/dept_order_nb_hab/{code_dept}")
-    public List<VilleDto> getNVillesByDepartmentCodeOrderByNbInhabitantsDesc(@PathVariable String code_dept, @RequestParam Integer n) throws RessourceNotFoundException, RequeteIncorrecteException {
+    public List<VilleDto> getNVillesByDepartmentCodeOrderByNbHabDesc(@PathVariable String code_dept, @RequestParam Integer n) throws RessourceNotFoundException, RequeteIncorrecteException {
         List<Ville> villes = villeService.extractVillesByDepartementCodeOrderByNbHabDesc(code_dept, n);
         return VilleMapper.toDtos(villes);
     }
@@ -360,19 +388,74 @@ public class VilleController {
     @Operation(summary = "Conversion des villes en fichier CSV")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
-                    description = "Retourne un fichier CSV contenant les villes (nom, nb habitants, code département, nom département"),
+                    description = "Retourne un fichier CSV contenant les villes concernées (nom, nb habitants, code département, nom département"),
             @ApiResponse(responseCode = "404",
                     description = "Une ressource n'a pas été trouvée")
     })
-    @GetMapping("/csv")
+    @GetMapping("/csv/villes")
     public ResponseEntity<String> generateCsvFile() throws RessourceNotFoundException {
         List<Ville> villes = villeService.getVilles();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "villes.csv");
+        headers.setContentDispositionFormData("attachment", "all-villes.csv");
 
         String csvBytes = csvGenerator.generateCSVVille(villes);
         return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+    }
+
+    /**
+     * Convertit les données des villes de plus de N habitants en fichier CSV.
+     * @param minHab nombre minimum d'habitants
+     * @return fichier CSV
+     * @throws RessourceNotFoundException aucune ville n'a pu être trouvée
+     * @throws RequeteIncorrecteException le nombre minimal d'habitants donné est incorrect
+     */
+    @Operation(summary = "Conversion des villes dont la population est supérieure à N en fichier CSV")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un fichier CSV contenant les villes concernées (nom, nb habitants, code département, nom département"),
+            @ApiResponse(responseCode = "404",
+                    description = "Une ressource n'a pas été trouvée"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
+    })
+    @GetMapping("/csv")
+    public ResponseEntity<String> generateCsvFile(@RequestParam("min") int minHab) throws RessourceNotFoundException, RequeteIncorrecteException {
+        List<Ville> villes = villeService.extractVillesByNbHabGreaterThan(minHab);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", String.format("villes-%shab.csv", minHab));
+
+        String csvBytes = csvGenerator.generateCSVVille(villes);
+        return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+    }
+
+    /**
+     * Convertit les données des villes d'un département en document PDF.
+     * @param codeDept code du département
+     * @param response réponse HTTP qui sera renvoyée
+     * @throws IOException exception liée à une erreur I/O
+     * @throws DocumentException erreur liée à la manipulation du document iText
+     * @throws RessourceNotFoundException la ressource demandée n'a pas pu être trouvée
+     * @throws RequeteIncorrecteException le code département donné est incorrect
+     */
+    @Operation(summary = "Conversion des villes d'un département en fichier PDF")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Retourne un fichier PDF contenant les villes d'un département (nom, nb habitants, code département, nom département"),
+            @ApiResponse(responseCode = "404",
+                    description = "Une ressource n'a pas été trouvée"),
+            @ApiResponse(responseCode = "400",
+                    description = "Erreur dans les paramètres donnés par le client")
+    })
+    @GetMapping("/pdf")
+    public void generatePdfFile(@RequestParam("code_dep") String codeDept, HttpServletResponse response) throws IOException, DocumentException, RessourceNotFoundException, RequeteIncorrecteException {
+        List<Ville> villes = villeService.extractVillesByDepartementCodeOrderByNbHabDesc(codeDept, departementService.getDepartementByCode(codeDept).getVilles().size());
+        response.setHeader("Content-Disposition", String.format("attachment; filename=\"villes-%s.pdf\"", villes.getFirst().getDepartement().getNom()));
+        PDFGenerator.generateDocumentPdfVilles(response, villes);
+
+        response.flushBuffer();
     }
 }

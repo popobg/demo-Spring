@@ -105,12 +105,12 @@ public class Ville implements Serializable, Comparable<Ville> {
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Ville{");
-        sb.append("id=").append(id);
-        sb.append(", nom='").append(nom).append('\'');
-        sb.append(", nbHabitants=").append(nbHabitants);
-        sb.append(", departement=").append(departement.getCode()).append("-").append(departement.getNom());
-        sb.append('}');
+        final StringBuilder sb = new StringBuilder("Ville : ");
+        sb.append("id = ").append(id);
+        sb.append(", nom = \"").append(nom).append('"');
+        sb.append(", nombre d'habitants = ").append(nbHabitants);
+        sb.append(", département = ").append(departement.getCode()).append(", ").append(departement.getNom());
+        sb.append(";\n");
         return sb.toString();
     }
 
