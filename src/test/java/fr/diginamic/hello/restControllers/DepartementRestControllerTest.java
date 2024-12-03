@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-public class DepartementControllerTest {
+public class DepartementRestControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
     @MockitoBean
