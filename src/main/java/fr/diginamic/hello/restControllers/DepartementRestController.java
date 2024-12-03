@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/departements")
-public class DepartementController {
+public class DepartementRestController {
 
     /** Service de gestion des départements */
     @Autowired

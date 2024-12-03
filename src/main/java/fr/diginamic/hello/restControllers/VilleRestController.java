@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/villes")
-public class VilleController {
+public class VilleRestController {
 
     /** Service de gestion des villes */
     @Autowired

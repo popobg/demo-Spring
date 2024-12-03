@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 // mapping de l'url qui permettra à l'API de joindre ce contrôleur
-@RequestMapping("/hello")
-public class HelloController {
+@RequestMapping("/api/hello")
+public class HelloRestController {
 
     /** Service de gestion des salutations */
     // injection de dépendances : bean Spring du service créé

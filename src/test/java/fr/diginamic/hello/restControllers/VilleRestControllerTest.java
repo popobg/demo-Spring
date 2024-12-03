@@ -31,7 +31,7 @@ import static org.hamcrest.Matchers.is;
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-class VilleControllerTest {
+class VilleRestControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
     @MockitoBean
