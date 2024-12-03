@@ -1,0 +1,31 @@
+<html lang="en" xmlns:th="http://thymeleaf.org">
+<head>
+    <title>Nouvelle ville</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div class="container">
+    <h1>Ajout de ville</h1>
+    <hr>
+    <h2>Enregistrer une nouvelle ville</h2>
+
+    <form action="#" th:action="@{/add}" th:object="${ville}"
+          method="POST">
+        <label>Nom de la ville</label>
+        <input type="text" th:field="*{nom}" placeholder="Barcelonnette" class="form-control mb-4 col-4">
+
+        <label>Nombre d'habitants</label>
+        <input type="number" th:field="*{nbHabitants}" placeholder="2359" class="form-control mb-4 col-4">
+
+        <label>Code du département</label>
+        <input type="text" th:field="*{codeDepartement}" placeholder="04" class="form-control mb-4 col-4">
+
+        <button type="submit" class="btn btn-info col-2">Ajouter la ville</button>
+    </form>
+
+    <hr>
+
+    <a href="/villes/liste">Retour à la liste des villes</a>
+</div>
+</body>
+</html>
