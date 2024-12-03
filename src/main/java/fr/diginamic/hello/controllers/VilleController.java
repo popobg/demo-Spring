@@ -30,31 +30,35 @@ public class VilleController {
         return "listeVilles";
     }
 
-//    @PostMapping("/add")
-//    public String addVille(@ModelAttribute("ville") VilleDto ville, @Valid @RequestBody BindingResult result) throws RessourceNotFoundException, RequeteIncorrecteException, RessourceExistanteException {
-//        if (result.hasErrors()) {
-//            throw new RequeteIncorrecteException(result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.joining(", ")));
-//        }
-//
-//        villeService.insertVille(VilleMapper.toEntity(ville));
-//        return "redirect:/liste";
-//    }
-//
-//    @GetMapping("/update/{id}")
-//    public String getUpdatePage(@PathVariable long id, Model model) throws RessourceNotFoundException, RequeteIncorrecteException {
-//        Ville ville = villeService.getVilleById(id);
-//        model.addAttribute("ville", ville);
-//        return "updateVille";
-//    }
-//
-//    @PostMapping("/update/{id}")
-//    public String updateVille(@ModelAttribute("ville") Ville ville) {
-//
-//    }
-//
-//    @GetMapping("/delete/{id}")
-//    public String deleteVille(@PathVariable long id) throws RessourceNotFoundException, RequeteIncorrecteException {
-//        villeService.deleteVille(id);
-//        return "redirect:/liste";
-//    }
+    @GetMapping("/addPage")
+    public String showFormAddVille(Model model) {
+        VilleDto ville = new VilleDto();
+        model.addAttribute("ville", ville);
+        return "addVille";
+    }
+
+    @PostMapping("/add")
+    public String addVille(@ModelAttribute("ville") VilleDto ville) throws RessourceNotFoundException, RequeteIncorrecteException, RessourceExistanteException {
+        villeService.insertVille(VilleMapper.toEntity(ville));
+        return "redirect:/villes/liste";
+    }
+
+    @GetMapping("/update/{id}")
+    public String showFormUpdateVille(@PathVariable long id, Model model) throws RessourceNotFoundException, RequeteIncorrecteException {
+        Ville ville = villeService.getVilleById(id);
+        model.addAttribute("ville", VilleMapper.toDto(ville));
+        return "updateVille";
+    }
+
+    @PostMapping("/update/{id}")
+    public String updateVille(@PathVariable long id, @ModelAttribute("ville") VilleDto ville) throws RessourceNotFoundException, RequeteIncorrecteException {
+        villeService.updateVille(id, VilleMapper.toEntity(ville));
+        return "redirect:/villes/liste";
+    }
+
+    @GetMapping("/delete/{id}")
+    public String deleteVille(@PathVariable long id) throws RessourceNotFoundException, RequeteIncorrecteException {
+        villeService.deleteVille(id);
+        return "redirect:/villes/liste";
+    }
 }
