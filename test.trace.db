@@ -153,3 +153,6 @@ Caused by: org.h2.mvstore.MVStoreException: The file is locked: D:/dev/CDA JAVA/
 	at org.h2.mvstore.SingleFileStore.open(SingleFileStore.java:81)
 	at org.h2.mvstore.MVStore.<init>(MVStore.java:286)
 	... 133 more
+2024-11-30 16:53:38.738872+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT * FROM VILLE VILLE [*]DEPARTEMENT"; SQL statement:
+SELECT * FROM VILLE VILLE DEPARTEMENT [42000-232]
