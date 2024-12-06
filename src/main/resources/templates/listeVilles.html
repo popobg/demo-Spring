@@ -6,50 +6,56 @@
     <meta charset="UTF-8">
 </head>
 <body>
+    <h3>Profil utilisateur :</h3>
+    <ul>
+        <li th:text="'Nom d\'utilisateur : ' + ${authentication.name}">Nom d'utilisateur</li>
+        <li th:text="'Permissions : ' + ${authentication.authorities}">Permissions</li>
+    </ul>
 
-<div class="container my-2">
-    <h1>Liste des villes :</h1>
 
-    <a th:href = "@{/addPage}" class="btn btn-primary btn-sm mb-3"> Ajouter une ville </a>
+    <div class="container my-2">
+        <h1>Liste des villes :</h1>
 
-    <table border ="1" class = "table table-striped table-responsive-md">
-        <thead>
-        <tr>
-            <th>
-                Nom de la ville
-            </th>
-            <th>
-                Nombre d'habitants
-            </th>
-            <th>
-                Nom du département
-            </th>
-            <th>
-                Code du département
-            </th>
-            <th>
-                Mettre-à-jour
-            </th>
-            <th>
-                Supprimer
-            </th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="ville : ${villes}">
-            <td th:text="${ville.nom}"></td>
-            <td th:text="${ville.nbHabitants}"></td>
-            <td th:text="${ville.departement.nom}"></td>
-            <td th:text="${ville.departement.code}"></td>
-            <td>
-                <a th:href="@{/update/{id}(id=${ville.id})}" class="btn btn-primary">Mettre-à-jour</a>
-            </td>
-            <td>
-                <a th:href="@{/delete/{id}(id=${ville.id})}" class="btn btn-danger">Supprimer la ville</a>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-</div>
+        <a th:href = "@{/addPage}" class="btn btn-primary btn-sm mb-3"> Ajouter une ville </a>
+
+        <table border ="1" class = "table table-striped table-responsive-md">
+            <thead>
+            <tr>
+                <th>
+                    Nom de la ville
+                </th>
+                <th>
+                    Nombre d'habitants
+                </th>
+                <th>
+                    Nom du département
+                </th>
+                <th>
+                    Code du département
+                </th>
+                <th>
+                    Mettre-à-jour
+                </th>
+                <th>
+                    Supprimer
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="ville : ${villes}">
+                <td th:text="${ville.nom}"></td>
+                <td th:text="${ville.nbHabitants}"></td>
+                <td th:text="${ville.departement.nom}"></td>
+                <td th:text="${ville.departement.code}"></td>
+                <td>
+                    <a th:href="@{/update/{id}(id=${ville.id})}" class="btn btn-primary">Mettre-à-jour</a>
+                </td>
+                <td>
+                    <a th:href="@{/delete/{id}(id=${ville.id})}" class="btn btn-danger">Supprimer la ville</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>

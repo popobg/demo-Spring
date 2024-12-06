@@ -9,6 +9,8 @@ import fr.diginamic.hello.models.Ville;
 import fr.diginamic.hello.services.VilleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -24,9 +26,10 @@ public class VilleController {
     private VilleService villeService;
 
     @GetMapping("villes/liste")
-    public String getVilles(Model model) throws RessourceNotFoundException {
+    public String getVilles(Model model, Authentication authentication) throws RessourceNotFoundException {
         List<Ville> villes = villeService.getVilles();
         model.addAttribute("villes", villes);
+        model.addAttribute("authentication", authentication);
         return "listeVilles";
     }
 
@@ -56,6 +59,9 @@ public class VilleController {
         return "redirect:/villes/liste";
     }
 
+    // Entre en fonctionnement s'il n'y a pas de contrainte sur cette méthode
+    // dans le ficher de config (SecurityConfig)
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/delete/{id}")
     public String deleteVille(@PathVariable long id) throws RessourceNotFoundException, RequeteIncorrecteException {
         villeService.deleteVille(id);

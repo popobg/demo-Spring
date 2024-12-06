@@ -24,6 +24,7 @@ public class UserAccountService {
         System.out.println("Passage dans le init de UserAccountService");
         insertUser(new UserAccount("user", "password", "ROLE_USER"));
         insertUser(new UserAccount("admin", "admin", "ROLE_ADMIN"));
+        insertUser(new UserAccount("popo", "popobg", "ROLE_ADMIN"));
     }
 
     public List<UserAccount> getUsers() {

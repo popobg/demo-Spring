@@ -1,4 +1,4 @@
-package fr.diginamic.hello.mapper;
+package fr.diginamic.hello.mappers;
 
 import fr.diginamic.hello.models.UserAccount;
 import org.springframework.security.core.userdetails.User;
