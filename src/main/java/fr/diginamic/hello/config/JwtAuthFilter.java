@@ -1,4 +1,4 @@
-package fr.diginamic.hello.filters;
+package fr.diginamic.hello.config;
 
 import fr.diginamic.hello.services.JwtService;
 import fr.diginamic.hello.services.UserDetailsServiceImpl;
